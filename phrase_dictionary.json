@@ -1,0 +1,1486 @@
+[
+  {
+    "phrase": "the lord is my shepherd",
+    "verse_id": "PSALMS_23_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i shall not want",
+    "verse_id": "PSALMS_23_1",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he maketh me to lie down in green pastures",
+    "verse_id": "PSALMS_23_2",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he leadeth me beside the still waters",
+    "verse_id": "PSALMS_23_2",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he restoreth my soul",
+    "verse_id": "PSALMS_23_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "he leadeth me in the paths of righteousness",
+    "verse_id": "PSALMS_23_3",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "yea though i walk through the valley of the shadow of death",
+    "verse_id": "PSALMS_23_4",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i will fear no evil",
+    "verse_id": "PSALMS_23_4",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "thy rod and thy staff they comfort me",
+    "verse_id": "PSALMS_23_4",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "thou preparest a table before me",
+    "verse_id": "PSALMS_23_5",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "thou anointest my head with oil",
+    "verse_id": "PSALMS_23_5",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "my cup runneth over",
+    "verse_id": "PSALMS_23_5",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+  {
+    "phrase": "surely goodness and mercy shall follow me",
+    "verse_id": "PSALMS_23_6",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "i will dwell in the house of the lord for ever",
+    "verse_id": "PSALMS_23_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "in the beginning god created the heaven and the earth",
+    "verse_id": "GENESIS_1_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the earth was without form and void",
+    "verse_id": "GENESIS_1_2",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+  {
+    "phrase": "the spirit of god moved upon the face of the waters",
+    "verse_id": "GENESIS_1_2",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "and god said let there be light",
+    "verse_id": "GENESIS_1_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "and there was light",
+    "verse_id": "GENESIS_1_3",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "let us make man in our image",
+    "verse_id": "GENESIS_1_26",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "in the image of god created he him",
+    "verse_id": "GENESIS_1_27",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "be fruitful and multiply",
+    "verse_id": "GENESIS_1_28",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "it is not good that the man should be alone",
+    "verse_id": "GENESIS_2_18",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "bone of my bones and flesh of my flesh",
+    "verse_id": "GENESIS_2_23",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "therefore shall a man leave his father and his mother",
+    "verse_id": "GENESIS_2_24",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "they shall be one flesh",
+    "verse_id": "GENESIS_2_24",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "now the serpent was more subtil",
+    "verse_id": "GENESIS_3_1",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "ye shall not surely die",
+    "verse_id": "GENESIS_3_4",
+    "tier": 2,
+    "weight": 7,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "cursed is the ground for thy sake",
+    "verse_id": "GENESIS_3_17",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "in the sweat of thy face shalt thou eat bread",
+    "verse_id": "GENESIS_3_19",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "am i my brother's keeper",
+    "verse_id": "GENESIS_4_9",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "sin lieth at the door",
+    "verse_id": "GENESIS_4_7",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "my spirit shall not always strive with man",
+    "verse_id": "GENESIS_6_3",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "but noah found grace in the eyes of the lord",
+    "verse_id": "GENESIS_6_8",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "make thee an ark of gopher wood",
+    "verse_id": "GENESIS_6_14",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "two of every sort shalt thou bring into the ark",
+    "verse_id": "GENESIS_6_19",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "and the lord shut him in",
+    "verse_id": "GENESIS_7_16",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the fountains of the great deep were broken up",
+    "verse_id": "GENESIS_7_11",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "the windows of heaven were opened",
+    "verse_id": "GENESIS_7_11",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "god remembered noah",
+    "verse_id": "GENESIS_8_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i will establish my covenant with you",
+    "verse_id": "GENESIS_9_11",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i do set my bow in the cloud",
+    "verse_id": "GENESIS_9_13",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the whole earth was of one language",
+    "verse_id": "GENESIS_11_1",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+  {
+    "phrase": "let us go down and there confound their language",
+    "verse_id": "GENESIS_11_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "get thee out of thy country",
+    "verse_id": "GENESIS_12_1",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "i will make of thee a great nation",
+    "verse_id": "GENESIS_12_2",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "in thee shall all families of the earth be blessed",
+    "verse_id": "GENESIS_12_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "fear not abram i am thy shield",
+    "verse_id": "GENESIS_15_1",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "i am thy exceeding great reward",
+    "verse_id": "GENESIS_15_1",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "abram believed in the lord and he counted it to him for righteousness",
+    "verse_id": "GENESIS_15_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "is any thing too hard for the lord",
+    "verse_id": "GENESIS_18_14",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "shall not the judge of all the earth do right",
+    "verse_id": "GENESIS_18_25",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "remember lot's wife",
+    "verse_id": "LUKE_17_32",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "god will provide himself a lamb",
+    "verse_id": "GENESIS_22_8",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "in blessing i will bless thee",
+    "verse_id": "GENESIS_22_17",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the elder shall serve the younger",
+    "verse_id": "GENESIS_25_23",
+    "tier": 2,
+    "weight": 8,
+    "exclusive": false
+  },
+
+  {
+    "phrase": "surely the lord is in this place",
+    "verse_id": "GENESIS_28_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "this is none other but the house of god",
+    "verse_id": "GENESIS_28_17",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord shall fight for you",
+    "verse_id": "EXODUS_14_14",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "stand still and see the salvation of the lord",
+    "verse_id": "EXODUS_14_13",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i am that i am",
+    "verse_id": "EXODUS_3_14",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "let my people go",
+    "verse_id": "EXODUS_5_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord shall reign for ever and ever",
+    "verse_id": "EXODUS_15_18",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "thou shalt have no other gods before me",
+    "verse_id": "EXODUS_20_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "honour thy father and thy mother",
+    "verse_id": "EXODUS_20_12",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord bless thee and keep thee",
+    "verse_id": "NUMBERS_6_24",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord make his face shine upon thee",
+    "verse_id": "NUMBERS_6_25",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord lift up his countenance upon thee",
+    "verse_id": "NUMBERS_6_26",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "god is not a man that he should lie",
+    "verse_id": "NUMBERS_23_19",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "hear o israel the lord our god is one lord",
+    "verse_id": "DEUTERONOMY_6_4",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "thou shalt love the lord thy god with all thine heart",
+    "verse_id": "DEUTERONOMY_6_5",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "man doth not live by bread only",
+    "verse_id": "DEUTERONOMY_8_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "choose life",
+    "verse_id": "DEUTERONOMY_30_19",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "be strong and of a good courage",
+    "verse_id": "JOSHUA_1_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "this book of the law shall not depart out of thy mouth",
+    "verse_id": "JOSHUA_1_8",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "meditate therein day and night",
+    "verse_id": "JOSHUA_1_8",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "as for me and my house we will serve the lord",
+    "verse_id": "JOSHUA_24_15",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "every man did that which was right in his own eyes",
+    "verse_id": "JUDGES_21_25",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord looketh on the heart",
+    "verse_id": "1_SAMUEL_16_7",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "obedience is better than sacrifice",
+    "verse_id": "1_SAMUEL_15_22",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the battle is the lord's",
+    "verse_id": "1_SAMUEL_17_47",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord is my rock and my fortress",
+    "verse_id": "2_SAMUEL_22_2",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord liveth and blessed be my rock",
+    "verse_id": "2_SAMUEL_22_47",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+    {
+    "phrase": "who is god save the lord",
+    "verse_id": "2_SAMUEL_22_32",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "i have sinned against the lord",
+    "verse_id": "2_SAMUEL_12_13",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "thou art the man",
+    "verse_id": "2_SAMUEL_12_7",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "thy house and thy kingdom shall be established for ever",
+    "verse_id": "2_SAMUEL_7_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the lord is my light and my salvation",
+    "verse_id": "PSALMS_27_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "wait on the lord be of good courage",
+    "verse_id": "PSALMS_27_14",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "and he shall strengthen thine heart",
+    "verse_id": "PSALMS_27_14",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+  {
+    "phrase": "the lord is my strength and my shield",
+    "verse_id": "PSALMS_28_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the earth is the lord's and the fulness thereof",
+    "verse_id": "PSALMS_24_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the lord is my refuge and my fortress",
+    "verse_id": "PSALMS_91_2",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "he shall cover thee with his feathers",
+    "verse_id": "PSALMS_91_4",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "under his wings shalt thou trust",
+    "verse_id": "PSALMS_91_4",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "a thousand shall fall at thy side and ten thousand at thy right hand",
+    "verse_id": "PSALMS_91_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he shall give his angels charge over thee",
+    "verse_id": "PSALMS_91_11",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "thou shalt tread upon the lion and adder",
+    "verse_id": "PSALMS_91_13",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord is my shepherd",
+    "verse_id": "PSALMS_23_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i will bless the lord at all times",
+    "verse_id": "PSALMS_34_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "his praise shall continually be in my mouth",
+    "verse_id": "PSALMS_34_1",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "delight thyself also in the lord",
+    "verse_id": "PSALMS_37_4",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he shall give thee the desires of thine heart",
+    "verse_id": "PSALMS_37_4",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+  {
+    "phrase": "commit thy way unto the lord trust also in him",
+    "verse_id": "PSALMS_37_5",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "rest in the lord and wait patiently for him",
+    "verse_id": "PSALMS_37_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord is my rock and my fortress",
+    "verse_id": "PSALMS_18_2",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "in thy presence is fulness of joy",
+    "verse_id": "PSALMS_16_11",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "at thy right hand there are pleasures for evermore",
+    "verse_id": "PSALMS_16_11",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "trust in him at all times ye people",
+    "verse_id": "PSALMS_62_8",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "pour out your heart before him",
+    "verse_id": "PSALMS_62_8",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "pray without ceasing",
+    "verse_id": "1_THESSALONIANS_5_17",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "in every thing give thanks",
+    "verse_id": "1_THESSALONIANS_5_18",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord shall preserve thee from all evil",
+    "verse_id": "PSALMS_121_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the lord is thy keeper",
+    "verse_id": "PSALMS_121_5",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the eternal god is thy refuge",
+    "verse_id": "DEUTERONOMY_33_27",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "and underneath are the everlasting arms",
+    "verse_id": "DEUTERONOMY_33_27",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord shall fight for you and ye shall hold your peace",
+    "verse_id": "EXODUS_14_14",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "when the enemy shall come in like a flood",
+    "verse_id": "ISAIAH_59_19",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the spirit of the lord shall lift up a standard against him",
+    "verse_id": "ISAIAH_59_19",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "the lord is a man of war",
+    "verse_id": "EXODUS_15_3",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "evening and morning and at noon will i pray and cry aloud",
+    "verse_id": "PSALMS_55_17",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the lord is good a strong hold in the day of trouble",
+    "verse_id": "NAHUM_1_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "he knoweth them that trust in him",
+    "verse_id": "NAHUM_1_7",
+    "tier": 1,
+    "weight": 8,
+    "exclusive": true
+  },
+  {
+    "phrase": "the name of the lord is a strong tower",
+    "verse_id": "PROVERBS_18_10",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "being justified freely by his grace",
+    "verse_id": "ROMANS_3_24",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "god is our refuge and strength a very present help in trouble",
+    "verse_id": "PSALMS_46_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "in the beginning was the word",
+    "verse_id": "JOHN_1_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the word was made flesh",
+    "verse_id": "JOHN_1_14",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "behold the lamb of god which taketh away the sin of the world",
+    "verse_id": "JOHN_1_29",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "for god so loved the world",
+    "verse_id": "JOHN_3_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "ye must be born again",
+    "verse_id": "JOHN_3_7",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i am the bread of life",
+    "verse_id": "JOHN_6_35",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i am the light of the world",
+    "verse_id": "JOHN_8_12",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "before abraham was i am",
+    "verse_id": "JOHN_8_58",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i am the good shepherd",
+    "verse_id": "JOHN_10_11",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "my sheep hear my voice",
+    "verse_id": "JOHN_10_27",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "i and my father are one",
+    "verse_id": "JOHN_10_30",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i am the resurrection and the life",
+    "verse_id": "JOHN_11_25",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "he that believeth in me though he were dead yet shall he live",
+    "verse_id": "JOHN_11_25",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "let not your heart be troubled",
+    "verse_id": "JOHN_14_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "in my father's house are many mansions",
+    "verse_id": "JOHN_14_2",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i go to prepare a place for you",
+    "verse_id": "JOHN_14_2",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "because i live ye shall live also",
+    "verse_id": "JOHN_14_19",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "i am the way the truth and the life",
+    "verse_id": "JOHN_14_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "no man cometh unto the father but by me",
+    "verse_id": "JOHN_14_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "come unto me all ye that labour and are heavy laden",
+    "verse_id": "MATTHEW_11_28",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i will give you rest",
+    "verse_id": "MATTHEW_11_28",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "take my yoke upon you and learn of me",
+    "verse_id": "MATTHEW_11_29",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "man shall not live by bread alone",
+    "verse_id": "MATTHEW_4_4",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "seek ye first the kingdom of god",
+    "verse_id": "MATTHEW_6_33",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "and all these things shall be added unto you",
+    "verse_id": "MATTHEW_6_33",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "ask and it shall be given you",
+    "verse_id": "MATTHEW_7_7",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "seek and ye shall find",
+    "verse_id": "MATTHEW_7_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "knock and it shall be opened unto you",
+    "verse_id": "MATTHEW_7_7",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "with god all things are possible",
+    "verse_id": "MATTHEW_19_26",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "what god hath joined together let not man put asunder",
+    "verse_id": "MATTHEW_19_6",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "go ye into all the world and preach the gospel",
+    "verse_id": "MARK_16_15",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "he that believeth and is baptized shall be saved",
+    "verse_id": "MARK_16_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "father forgive them for they know not what they do",
+    "verse_id": "LUKE_23_34",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "today shalt thou be with me in paradise",
+    "verse_id": "LUKE_23_43",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "christ died for our sins according to the scriptures",
+    "verse_id": "1_CORINTHIANS_15_3",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "he rose again the third day according to the scriptures",
+    "verse_id": "1_CORINTHIANS_15_4",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "we shall all be changed",
+    "verse_id": "1_CORINTHIANS_15_51",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "in a moment in the twinkling of an eye",
+    "verse_id": "1_CORINTHIANS_15_52",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "at the last trump",
+    "verse_id": "1_CORINTHIANS_15_52",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the trumpet shall sound",
+    "verse_id": "1_CORINTHIANS_15_52",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the dead shall be raised incorruptible",
+    "verse_id": "1_CORINTHIANS_15_52",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "we shall be changed",
+    "verse_id": "1_CORINTHIANS_15_52",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "this corruptible must put on incorruption",
+    "verse_id": "1_CORINTHIANS_15_53",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "this mortal must put on immortality",
+    "verse_id": "1_CORINTHIANS_15_53",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "death is swallowed up in victory",
+    "verse_id": "1_CORINTHIANS_15_54",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "o death where is thy sting",
+    "verse_id": "1_CORINTHIANS_15_55",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "o grave where is thy victory",
+    "verse_id": "1_CORINTHIANS_15_55",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "all have sinned and come short of the glory of god",
+    "verse_id": "ROMANS_3_23",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "being justified by faith we have peace with god",
+    "verse_id": "ROMANS_5_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the wages of sin is death but the gift of god is eternal life",
+    "verse_id": "ROMANS_6_23",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "there is therefore now no condemnation to them which are in christ jesus",
+    "verse_id": "ROMANS_8_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "if god be for us who can be against us",
+    "verse_id": "ROMANS_8_31",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "nothing shall be able to separate us from the love of god",
+    "verse_id": "ROMANS_8_39",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "faith cometh by hearing and hearing by the word of god",
+    "verse_id": "ROMANS_10_17",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "whosoever shall call upon the name of the lord shall be saved",
+    "verse_id": "ROMANS_10_13",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "a man is not justified by the works of the law but by the faith of jesus christ",
+    "verse_id": "GALATIANS_2_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "i am crucified with christ nevertheless i live",
+    "verse_id": "GALATIANS_2_20",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the life which i now live in the flesh i live by the faith of the son of god",
+    "verse_id": "GALATIANS_2_20",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "the just shall live by faith",
+    "verse_id": "GALATIANS_3_11",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "ye are all the children of god by faith in christ jesus",
+    "verse_id": "GALATIANS_3_26",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "stand fast therefore in the liberty wherewith christ hath made us free",
+    "verse_id": "GALATIANS_5_1",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "walk in the spirit and ye shall not fulfil the lust of the flesh",
+    "verse_id": "GALATIANS_5_16",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "the fruit of the spirit is love joy peace longsuffering gentleness goodness faith meekness temperance",
+    "verse_id": "GALATIANS_5_22",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "whatsoever a man soweth that shall he also reap",
+    "verse_id": "GALATIANS_6_7",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+
+  {
+    "phrase": "for by grace are ye saved through faith",
+    "verse_id": "EPHESIANS_2_8",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "not of works lest any man should boast",
+    "verse_id": "EPHESIANS_2_9",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "we are his workmanship created in christ jesus unto good works",
+    "verse_id": "EPHESIANS_2_10",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "endeavouring to keep the unity of the spirit in the bond of peace",
+    "verse_id": "EPHESIANS_4_3",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "there is one body and one spirit even as ye are called in one hope of your calling",
+    "verse_id": "EPHESIANS_4_4",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "speaking the truth in love",
+    "verse_id": "EPHESIANS_4_15",
+    "tier": 1,
+    "weight": 9,
+    "exclusive": true
+  },
+  {
+    "phrase": "grieve not the holy spirit of god whereby ye are sealed unto the day of redemption",
+    "verse_id": "EPHESIANS_4_30",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "be ye kind one to another tenderhearted forgiving one another",
+    "verse_id": "EPHESIANS_4_32",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  },
+  {
+    "phrase": "husbands love your wives even as christ also loved the church",
+    "verse_id": "EPHESIANS_5_25",
+    "tier": 1,
+    "weight": 10,
+    "exclusive": true
+  }
+]
+
+
+
+
+
+

@@ -1,0 +1,51 @@
+TO RUN ON LOCAL ---- NO custom domain required.
+
+Start FASTAPI Server 1
+
+cd C:\kjv_project
+python -m uvicorn api_server:app --reload
+
+http://127.0.0.1:8000/presenter/demo
+
+http://127.0.0.1:8000/control/demo
+
+http://127.0.0.1:8000/docs#/
+
+
+cd C:\kjv_project
+python stt_azure.py
+
+presenter screen
+
+http://<server-ip>:8000/presenter/demo
+
+http://192.168.1.25:8000/presenter/demo
+
+IP Address for church = 172.27.32.1
+IP Address for home = 192.168.2.11
+
+on PS terminal running the API server,
+run uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload
+
+
+“Before finalizing the code, thoroughly validate all syntax, brackets, quotes, decorators, and indentation to ensure the code runs without errors.”
+
+TO VIEW VIA PUBLIC URL 
+1.Go to https://dashboard.ngrok.com
+2. Copy your AUTH Token
+3. In Powershellrun  ngrok config add-authtoken YOUR_TOKEN_HERE
+4. Start FastAPI server  uvicorn api_server:app --host 0.0.0.0 --port 8000 --reload
+5. In a new Powershell terminal, run ngrok http 8000
+6.copy the generated url, append the appropriate suffic i.e presenter/demo or control/demo
+
+
+
+
+
+When using AI tools
+1. It may be referencing stale info online. Provide photos/screenshot ofwhat you're seeing to the AI. It helps it quickly find alternative resolution paths
+2. Ask it to double check and thoroughly review its response before giving you e.g check for syntax errors
+3. Version control - always store a working version with a note on what works best on this version
+
+
+What I did today with Cloudflare

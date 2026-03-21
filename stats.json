@@ -1,0 +1,10 @@
+{
+  "parsed_verses": 31102,
+  "unique_keywords": 12698,
+  "input_file": "kjv.txt",
+  "outputs": [
+    "verses_index.json",
+    "keyword_index.json",
+    "stats.json"
+  ]
+}

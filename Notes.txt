@@ -1,0 +1,56 @@
+TO RUN USING CUSTOM DOMAIN             8bc33ab7-c2a5-4a7b-b8e7-c67fe371d624
+
+Notes
+
+Terminal 1 — Run your VerseCast server
+cd C:\kjv_project 
+py -3.12 -m uvicorn api_server:app --reload
+
+Terminal 2 — Presenter Tunnel
+ngrok http --domain=presenter.versecast.ca.ngrok.app 8000
+
+
+Terminal 3 — Control Panel Tunnel
+ngrok http --domain=control.versecast.ca.ngrok.app 8000
+
+
+
+VERSECAST UI
+
+https://control.versecast.ca.ngrok.app/control/demo
+
+https://presenter.versecast.ca.ngrok.app/presenter/demo
+
+
+
+If tunnel is down
+run this in PS
+cloudflared tunnel run versecast-tunnel
+
+bWE]iLGv
+
+To Deploy a change in the site
+git add .
+git commit -m "Add accept invite page and routing"
+git push origin main
+
+
+ONBOARDING
+POST/SaS/onboarding/create-church
+GET/SaaS/onboarding/me
+
+
+
+Sessions
+POST Sessions/Start
+POST/SESSIONS/END
+GET/SESSIONS/CURRENT
+GET/SESSIONS/HISTORY
+
+OPERATORS
+POST/OPERATORS/INVITE
+GET/OPERATORS-list operators
+GET/OPERATORS/INVITATIONS
+GET/OPERATORS/GET-INVITE
+POST/OPERATORS/ACCEPT-INVITE
+POST/OPERATORS/DEACTIVATE

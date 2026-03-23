@@ -46,9 +46,7 @@ def create_church(
     church_name = payload.church_name.strip()
     church_slug = church_name.lower().replace(" ", "-")
 
-    # -----------------------------
     # Create church (sync client)
-    # -----------------------------
     church_insert_res = (
         supabase.table("churches")
         .insert(
@@ -62,10 +60,11 @@ def create_church(
     )
 
     if church_insert_res.error or not church_insert_res.data:
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=f"Failed to create church: {church_insert_res.error}",
-    )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create church: {church_insert_res.error}",
+        )
+
     # Fetch the inserted church row
     church_res = (
         supabase.table("churches")
@@ -85,9 +84,7 @@ def create_church(
     church_id = church["church_id"]
 
     try:
-        # -----------------------------
         # Create owner user profile
-        # -----------------------------
         user_insert_res = (
             supabase.table("users")
             .insert(
@@ -119,9 +116,7 @@ def create_church(
 
         user = user_res.data
 
-        # -----------------------------
         # Create default church settings
-        # -----------------------------
         settings_res = (
             supabase.table("church_settings")
             .insert(
@@ -169,7 +164,6 @@ def create_church(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Onboarding failed: {str(e)}",
         )
-
 
 # =========================================================
 # GET CURRENT USER + CHURCH

@@ -543,6 +543,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",               # local dev alt
         "https://versecast-site.onrender.com", # your deployed frontend
         "https://www.versecast.ca",            # your custom domain (if active)
+        "https://versecast.ca",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -566,7 +567,12 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # -------------------------
 @app.exception_handler(Exception)
 async def handler(request, exc):
-    return JSONResponse(status_code=500, content={"error": str(exc)})
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc)},
+        headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")}
+    )
+
 
 # -------------------------
 # HEALTH CHECK

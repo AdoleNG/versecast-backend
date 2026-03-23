@@ -62,11 +62,10 @@ def create_church(
     )
 
     if church_insert_res.error or not church_insert_res.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create church",
-        )
-
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"Failed to create church: {church_insert_res.error}",
+    )
     # Fetch the inserted church row
     church_res = (
         supabase.table("churches")

@@ -13,7 +13,6 @@ router = APIRouter(
     tags=["onboarding"],
 )
 
-
 # =========================================================
 # CREATE CHURCH (OWNER ONBOARDING)
 # =========================================================
@@ -47,20 +46,42 @@ def create_church(
     church_name = payload.church_name.strip()
     church_slug = church_name.lower().replace(" ", "-")
 
-    # Create church
-    church_res = (
-        supabase.table("churches")
-        .insert(
-            {
-                "name": church_name,
-                "slug": church_slug,
-                "created_by": auth_user_id,
-            }
-        )
-        .select("church_id, name, slug, created_at")
-        .single()
-        .execute()
+    # Create church (sync client does NOT support .select() after insert)
+church_insert_res = (
+    supabase.table("churches")
+    .insert(
+        {
+            "name": church_name,
+            "slug": church_slug,
+            "created_by": auth_user_id,
+        }
     )
+    .execute()
+)
+
+if church_insert_res.error or not church_insert_res.data:
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Failed to create church",
+    )
+
+# Fetch the inserted church row
+church_res = (
+    supabase.table("churches")
+    .select("church_id, name, slug, created_at")
+    .eq("slug", church_slug)
+    .single()
+    .execute()
+)
+
+if church_res.error or not church_res.data:
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Failed to fetch created church",
+    )
+
+church = church_res.data
+church_id = church["church_id"]
 
     if church_res.error or not church_res.data:
         raise HTTPException(
@@ -73,21 +94,28 @@ def create_church(
 
     try:
         # Create owner user profile
-        user_res = (
-            supabase.table("users")
-            .insert(
-                {
-                    "id": auth_user_id,
-                    "church_id": church_id,
-                    "full_name": payload.full_name.strip(),
-                    "email": auth_email,
-                    "role": "owner",
-                    "status": "active",
-                }
-            )
-            .select("id, role")
-            .single()
-            .execute()
+        user_insert_res = (
+    supabase.table("users")
+    .insert({...})
+    .execute()
+)
+
+if user_insert_res.error or not user_insert_res.data:
+    raise Exception("Failed to create owner profile")
+
+user_res = (
+    supabase.table("users")
+    .select("id, role")
+    .eq("id", auth_user_id)
+    .single()
+    .execute()
+)
+
+if user_res.error or not user_res.data:
+    raise Exception("Failed to fetch owner profile")
+
+user = user_res.data
+
         )
 
         if user_res.error or not user_res.data:

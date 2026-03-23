@@ -14,6 +14,9 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# CREATE CHURCH (OWNER ONBOARDING)
+# =========================================================
 @router.post("/create-church", response_model=CreateChurchResponse)
 def create_church(
     payload: CreateChurchRequest,
@@ -24,6 +27,7 @@ def create_church(
     auth_user_id = auth_user.id
     auth_email = getattr(auth_user, "email", None)
 
+    # Check if user already exists in public.users
     existing_user_res = (
         supabase.table("users")
         .select("id, church_id, role")
@@ -39,31 +43,36 @@ def create_church(
             detail="User has already completed church onboarding",
         )
 
+    # Prepare church data
     church_name = payload.church_name.strip()
     church_slug = church_name.lower().replace(" ", "-")
 
+    # Create church
     church_res = (
         supabase.table("churches")
         .insert(
             {
                 "name": church_name,
                 "slug": church_slug,
+                "created_by": auth_user_id,
             }
         )
+        .select("church_id, name, slug, created_at")
+        .single()
         .execute()
     )
 
-    church_rows = church_res.data or []
-    if not church_rows:
+    if church_res.error or not church_res.data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create church",
         )
 
-    church = church_rows[0]
-    church_id = church["id"]
+    church = church_res.data
+    church_id = church["church_id"]
 
     try:
+        # Create owner user profile
         user_res = (
             supabase.table("users")
             .insert(
@@ -76,36 +85,45 @@ def create_church(
                     "status": "active",
                 }
             )
+            .select("id, role")
+            .single()
             .execute()
         )
 
-        user_rows = user_res.data or []
-        if not user_rows:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create owner profile",
-            )
+        if user_res.error or not user_res.data:
+            raise Exception("Failed to create owner profile")
 
-        supabase.table("church_settings").insert(
-            {
-                "church_id": church_id,
-                "display_mode": "assist",
-                "approval_required": True,
-                "hold_seconds": 10,
-                "default_translation": "KJV",
-                "max_range_verses": 10,
-            }
-        ).execute()
+        user = user_res.data
+
+        # Create default church settings
+        settings_res = (
+            supabase.table("church_settings")
+            .insert(
+                {
+                    "church_id": church_id,
+                    "display_mode": "assist",
+                    "approval_required": True,
+                    "hold_seconds": 10,
+                    "default_translation": "KJV",
+                    "max_range_verses": 15,
+                }
+            )
+            .execute()
+        )
+
+        if settings_res.error:
+            raise Exception("Failed to create church settings")
 
         return CreateChurchResponse(
-            church_id=church["id"],
+            church_id=church_id,
             church_name=church["name"],
-            user_id=user_rows[0]["id"],
-            role=user_rows[0]["role"],
+            user_id=user["id"],
+            role=user["role"],
             created_at=church.get("created_at"),
         )
 
     except Exception as e:
+        # Cleanup on failure
         try:
             supabase.table("users").delete().eq("id", auth_user_id).execute()
         except Exception:
@@ -117,7 +135,7 @@ def create_church(
             pass
 
         try:
-            supabase.table("churches").delete().eq("id", church_id).execute()
+            supabase.table("churches").delete().eq("church_id", church_id).execute()
         except Exception:
             pass
 
@@ -127,6 +145,9 @@ def create_church(
         )
 
 
+# =========================================================
+# GET CURRENT USER + CHURCH
+# =========================================================
 @router.get("/me", response_model=MeResponse)
 def get_me(auth_user=Depends(get_current_auth_user)):
     supabase = get_admin_supabase()
@@ -134,6 +155,7 @@ def get_me(auth_user=Depends(get_current_auth_user)):
     auth_user_id = auth_user.id
     auth_email = getattr(auth_user, "email", None)
 
+    # Load user profile
     user_res = (
         supabase.table("users")
         .select("id, full_name, role, church_id")
@@ -152,10 +174,11 @@ def get_me(auth_user=Depends(get_current_auth_user)):
     user = user_rows[0]
     church_id = user["church_id"]
 
+    # Load church info
     church_res = (
         supabase.table("churches")
-        .select("id, name, slug")
-        .eq("id", church_id)
+        .select("church_id, name, slug")
+        .eq("church_id", church_id)
         .limit(1)
         .execute()
     )
@@ -175,7 +198,7 @@ def get_me(auth_user=Depends(get_current_auth_user)):
         full_name=user.get("full_name"),
         role=user["role"],
         church=ChurchInfo(
-            id=church["id"],
+            id=church["church_id"],
             name=church["name"],
             slug=church["slug"],
         ),

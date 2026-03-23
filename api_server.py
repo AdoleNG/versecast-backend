@@ -527,35 +527,50 @@ def held(session, mode):
         return False
     return (time.time() - session["current_at"]) < HOLD_SECONDS
 
-# =========================================================
+# ============================================================
 # FASTAPI APP
-# =========================================================
+# ============================================================
 
 app = FastAPI()
+
+# -------------------------
+# CORS CONFIGURATION (FIXED)
+# -------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://www.versecast.ca",
+        "http://localhost:5173",               # local dev
+        "http://127.0.0.1:5173",               # local dev alt
+        "https://versecast-site.onrender.com", # your deployed frontend
+        "https://www.versecast.ca",            # your custom domain (if active)
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# -------------------------
+# ROUTERS
+# -------------------------
 app.include_router(onboarding_router)
 app.include_router(sessions_router)
 app.include_router(operators_router)
 
+# -------------------------
+# LOGGING
+# -------------------------
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
-
+# -------------------------
+# GLOBAL EXCEPTION HANDLER
+# -------------------------
 @app.exception_handler(Exception)
 async def handler(request, exc):
     return JSONResponse(status_code=500, content={"error": str(exc)})
 
-
+# -------------------------
+# HEALTH CHECK
+# -------------------------
 @app.get("/health")
 def health():
     return {"ok": True}

@@ -570,6 +570,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 async def handler(request, exc):
     origin = request.headers.get("origin")
     headers = {}
+
     if origin:
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"

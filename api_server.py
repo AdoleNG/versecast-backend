@@ -539,17 +539,18 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",               # local dev
-        "http://127.0.0.1:5173",               # local dev alt
-        "https://versecast-site.onrender.com", # your deployed frontend
-        "https://www.versecast.ca",            # your custom domain (if active)
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://versecast-site.onrender.com",
+        "https://www.versecast.ca",
         "https://versecast.ca",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # -------------------------
 # ROUTERS
 # -------------------------
@@ -567,10 +568,16 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # -------------------------
 @app.exception_handler(Exception)
 async def handler(request, exc):
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+
     return JSONResponse(
         status_code=500,
         content={"error": str(exc)},
-        headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")}
+        headers=headers
     )
 
 

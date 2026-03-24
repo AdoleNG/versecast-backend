@@ -996,24 +996,6 @@ pre {{
   </button>
 </div>
 
-<!-- Open Presenter Button -->
-<div style="margin-top: 10px; margin-bottom: 20px;">
-  <button 
-    onclick="window.open('/presenter/{sid}', '_blank')" 
-    style="
-      background: #16a34a; 
-      color: white; 
-      padding: 10px 18px; 
-      border-radius: 6px; 
-      font-size: 15px; 
-      cursor: pointer;
-    "
-  >
-    Open Presenter
-  </button>
-</div>
-
-
 <div class="config-line">
 Mode: {DISPLAY_MODE} | Hold: {int(HOLD_SECONDS)}s
 </div>

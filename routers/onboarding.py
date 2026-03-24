@@ -46,7 +46,7 @@ def create_church(
     church_name = payload.church_name.strip()
     church_slug = church_name.lower().replace(" ", "-")
 
-    # Create church (sync client)
+    # Create church
     church_insert_res = (
         supabase.table("churches")
         .insert(
@@ -59,10 +59,10 @@ def create_church(
         .execute()
     )
 
-    if church_insert_res.error or not church_insert_res.data:
+    if not church_insert_res.data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create church: {church_insert_res.error}",
+            detail="Failed to create church",
         )
 
     # Fetch the inserted church row
@@ -74,7 +74,7 @@ def create_church(
         .execute()
     )
 
-    if church_res.error or not church_res.data:
+    if not church_res.data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch created church",
@@ -100,7 +100,7 @@ def create_church(
             .execute()
         )
 
-        if user_insert_res.error or not user_insert_res.data:
+        if not user_insert_res.data:
             raise Exception("Failed to create owner profile")
 
         user_res = (
@@ -111,7 +111,7 @@ def create_church(
             .execute()
         )
 
-        if user_res.error or not user_res.data:
+        if not user_res.data:
             raise Exception("Failed to fetch owner profile")
 
         user = user_res.data
@@ -132,7 +132,7 @@ def create_church(
             .execute()
         )
 
-        if settings_res.error:
+        if not settings_res.data:
             raise Exception("Failed to create church settings")
 
         return CreateChurchResponse(
@@ -147,23 +147,24 @@ def create_church(
         # Cleanup on failure
         try:
             supabase.table("users").delete().eq("id", auth_user_id).execute()
-        except Exception:
+        except:
             pass
 
         try:
             supabase.table("church_settings").delete().eq("church_id", church_id).execute()
-        except Exception:
+        except:
             pass
 
         try:
             supabase.table("churches").delete().eq("church_id", church_id).execute()
-        except Exception:
+        except:
             pass
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Onboarding failed: {str(e)}",
         )
+
 
 # =========================================================
 # GET CURRENT USER + CHURCH

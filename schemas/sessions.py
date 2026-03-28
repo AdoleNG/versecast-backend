@@ -4,13 +4,13 @@ from pydantic import BaseModel
 
 
 class StartSessionRequest(BaseModel):
-    title: str
+    # No fields needed — starting a session requires no input
+    pass
 
 
 class SessionResponse(BaseModel):
     id: UUID
     church_id: UUID
-    title: str
     started_at: datetime | None = None
     ended_at: datetime | None = None
 
@@ -18,6 +18,5 @@ class SessionResponse(BaseModel):
 class SessionHistoryItem(BaseModel):
     id: UUID
     church_id: UUID
-    title: str
     started_at: datetime | None = None
     ended_at: datetime | None = None

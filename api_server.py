@@ -1,6 +1,8 @@
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
+from dotenv import load_dotenv
+import os
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -566,6 +568,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # -------------------------
 # GLOBAL EXCEPTION HANDLER
 # -------------------------
+
 @app.exception_handler(Exception)
 async def handler(request, exc):
     origin = request.headers.get("origin")
@@ -754,12 +757,15 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
     return RedirectResponse(url=f"/presenter/{sid}", status_code=307)
 
 # =========================================================
-# MANUAL MATCH
+# MANUAL MATCH MULTI TENANT SESSION AWARE
 # =========================================================
-
 @app.post("/match")
-def match_route(payload: Dict[str, Any]):
+def match_route(payload: Dict[str, Any], user=Depends(get_current_auth_user)):
     sid = payload.get("session_id", "demo")
+
+    # NEW: validate session belongs to this church and is active
+    get_valid_session(sid, user)
+
     text = payload.get("text", "").strip()
     s = get_session(sid)
 
@@ -800,6 +806,7 @@ def match_route(payload: Dict[str, Any]):
     debug_log("MATCH_ROUTE_RESULT: displayed")
     return {"status": "displayed", "result": r}
 
+
 # =========================================================
 # INGEST (for STT OR any external client)
 # =========================================================
@@ -826,16 +833,20 @@ def ingest(payload: Dict[str, Any]):
     return match_route({"session_id": sid, "text": final})
 
 # =========================================================
-# APPROVAL (PUBLIC, SESSION-ID–SCOPED)
+# REAL-TIME SESSION ACTIONS (PUBLIC, SESSION-ID–SCOPED)
 # =========================================================
 
 @app.post("/approve/{sid}")
-def approve(sid: str):
+def approve(sid: str, user=Depends(get_current_auth_user)):
+    # Validate session
+    get_valid_session(sid, user)
+
     s = get_session(sid)
     if not s["pending"]:
         return {"status": "no_pending"}
     if held(s, s["pending"]["mode"]):
         return {"status": "held"}
+
     s["current"] = s["pending"]
     s["current_at"] = time.time()
     s["pending"] = None
@@ -843,23 +854,36 @@ def approve(sid: str):
 
 
 @app.post("/clear_pending/{sid}")
-def clear_pending(sid: str):
+def clear_pending(sid: str, user=Depends(get_current_auth_user)):
+    # Validate session
+    get_valid_session(sid, user)
+
     s = get_session(sid)
     s["pending"] = None
     return {"status": "cleared_pending"}
 
 
 @app.post("/clear_all/{sid}")
-def clear_all(sid: str):
+def clear_all(sid: str, user=Depends(get_current_auth_user)):
+    # Validate session
+    get_valid_session(sid, user)
+
     SESSIONS[sid] = new_session()
     return {"status": "cleared_all"}
 
 
 @app.get("/current/{sid}")
-def current(sid: str):
-    s = get_session(sid)
-    return {"current": s["current"], "pending": s["pending"]}
+def get_current_state(sid: str, user=Depends(get_current_auth_user)):
+    # Validate session
+    get_valid_session(sid, user)
 
+    s = get_session(sid)
+
+    return {
+        "status": s.get("status", "idle"),
+        "pending": s.get("pending"),
+        "current": s.get("current"),
+    }
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)
 # =========================================================
@@ -867,11 +891,19 @@ def current(sid: str):
 @app.get("/control")
 def control_root():
     return RedirectResponse("/control/demo")
+
+
 @app.get("/control/{sid}", response_class=HTMLResponse)
-def control(sid: str):
+def control(sid: str, user=Depends(get_current_auth_user)):
+    get_valid_session(sid, user)
+
     return f"""
+<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 body {{
   font-family: "Segoe UI", Arial, sans-serif;
@@ -892,120 +924,70 @@ h1 {{
   font-size: 30px;
   font-weight: 800;
 }}
-.config-line {{
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 20px;
-}}
 .section-title {{
-  font-size: 18px;
-  font-weight: 600;
-  margin-top: 25px;
+  margin-top: 30px;
   margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 700;
 }}
 .input-row {{
   display: flex;
   gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
 }}
 .input-row input {{
   flex: 1;
-  height: 48px;
-  font-size: 18px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
 }}
 button {{
-  background: #0078ff;
-  color: white;
-  border: none;
   padding: 10px 18px;
-  border-radius: 6px;
   font-size: 15px;
+  border-radius: 6px;
   cursor: pointer;
+  border: none;
+  background: #2563eb;
+  color: white;
 }}
-button:hover {{
-  background: #005fcc;
-}}
-.danger {{
-  background: #d9534f;
-}}
-.danger:hover {{
-  background: #b52b27;
+button.danger {{
+  background: #dc2626;
 }}
 .pending-box {{
-  background: #fff8e1;
-  border-left: 5px solid #ffb300;
+  background: #fef3c7;
   padding: 15px;
-  border-radius: 6px;
-  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
 }}
 .pending-header {{
-  font-weight: 600;
-  margin-bottom: 5px;
-}}
-.pending-meta {{
-  font-size: 13px;
-  color: #555;
-  margin-top: 5px;
+  font-weight: bold;
+  margin-bottom: 8px;
 }}
 .verse-box {{
-  background: #f0f0f0;
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 8px;
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: 18px;
+  margin-bottom: 8px;
 }}
-pre {{
-  background: #1e1e1e;
-  color: #0f0;
-  padding: 18px;
-  border-radius: 6px;
-  margin-top: 10px;
-  white-space: pre-wrap;
+.pending-meta {{
   font-size: 14px;
-}}
-.hint {{
-  font-size: 12px;
-  color: #777;
-  margin-top: 10px;
+  color: #555;
 }}
 </style>
 </head>
+
 <body>
 <div class="panel">
   <h1>VerseCast Control Panel (session: {sid})</h1>
 
-<!-- Open Presenter Button -->
-<div style="margin-top: 10px; margin-bottom: 20px;">
-  <button 
-    onclick="window.open('/presenter/{sid}', '_blank')" 
-    style="
-      background: #16a34a; 
-      color: white; 
-      padding: 10px 18px; 
-      border-radius: 6px; 
-      font-size: 15px; 
-      cursor: pointer;
-    "
-  >
-    Open Presenter
-  </button>
-</div>
-
-<div class="config-line">
-Mode: {DISPLAY_MODE} | Hold: {int(HOLD_SECONDS)}s
-</div>
+  <div style="margin-top: 10px; margin-bottom: 20px;">
+    <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
+      Open Presenter
+    </button>
+  </div>
 
   <div class="section-title">Enter Reference or Phrase</div>
   <div class="input-row">
     <input id="t" value=""/>
     <button onclick="match()">Match</button>
   </div>
-  <div class="hint"></div>
 
   <div class="section-title">Pending (Best)</div>
   <div id="pending_box" class="pending-box" style="display:none;">
@@ -1028,27 +1010,39 @@ Mode: {DISPLAY_MODE} | Hold: {int(HOLD_SECONDS)}s
 </div>
 
 <script>
+const supabase = window.supabase.createClient(
+  "https://jrgauouvwrqcmyqmwbrh.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q"
+);
+
+async function authHeaders() {{
+  const {{ data }} = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return {{
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json"
+  }};
+}}
+
 async function refresh() {{
-  let r = await fetch('/current/{sid}');
+  let r = await fetch('/current/{sid}', {{
+    headers: await authHeaders()
+  }});
   let s = await r.json();
   let p = s.pending;
 
   if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
-
-    const v = p.best || {{}};
-    const ref = v.reference || v.ref || '';
-    const text = v.text_kjv || v.text || '';
-
-    document.getElementById('pending_ref').textContent = ref;
-    document.getElementById('pending_text').textContent = text;
+    const v = p.best;
+    document.getElementById('pending_ref').textContent = v.reference || v.ref || '';
+    document.getElementById('pending_text').textContent = v.text_kjv || v.text || '';
     document.getElementById('pending_mode').textContent = p.mode || '';
     document.getElementById('pending_conf').textContent = p.confidence ?? '';
-
   }} else {{
     document.getElementById('pending_box').style.display = 'none';
   }}
 }}
+
 function setStatusFromResponse(j) {{
   document.getElementById('status_box').textContent =
     JSON.stringify({{ status: j.status }}, null, 2);
@@ -1057,8 +1051,8 @@ function setStatusFromResponse(j) {{
 async function match() {{
   let r = await fetch('/match', {{
     method:'POST',
-    headers:{{'Content-Type':'application/json'}},
-    body:JSON.stringify({{
+    headers: await authHeaders(),
+    body: JSON.stringify({{
       session_id:'{sid}',
       text:document.getElementById('t').value
     }})
@@ -1069,21 +1063,30 @@ async function match() {{
 }}
 
 async function approve() {{
-  let r = await fetch('/approve/{sid}', {{ method:'POST' }});
+  let r = await fetch('/approve/{sid}', {{
+    method:'POST',
+    headers: await authHeaders()
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
 }}
 
 async function clearPending() {{
-  let r = await fetch('/clear_pending/{sid}', {{ method:'POST' }});
+  let r = await fetch('/clear_pending/{sid}', {{
+    method:'POST',
+    headers: await authHeaders()
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
 }}
 
 async function clearAll() {{
-  let r = await fetch('/clear_all/{sid}', {{ method:'POST' }});
+  let r = await fetch('/clear_all/{sid}', {{
+    method:'POST',
+    headers: await authHeaders()
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
@@ -1092,9 +1095,11 @@ async function clearAll() {{
 refresh();
 setInterval(refresh, 1500);
 </script>
+
 </body>
 </html>
 """
+
 # ================================================================
 # PRESENTER (redesigned, supports ranges + styling + auto font size)
 # ================================================================
@@ -1105,13 +1110,16 @@ def presenter_root():
 
 
 @app.get("/presenter/{sid}", response_class=HTMLResponse)
-def presenter(sid: str):
+def presenter(sid: str, user=Depends(get_current_auth_user)):
+    get_valid_session(sid, user)
+
     return f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Presenter – {sid}</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 body {{
   margin: 0;
@@ -1123,60 +1131,37 @@ body {{
   flex-direction: column;
   height: 100vh;
 }}
-
 .wrapper {{
-  padding: 48px 72px;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}}
-
-.reference {{
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #f9e79f;
-  margin-bottom: 24px;
-}}
-
-.passage-container {{
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  max-width: 1200px;
+  padding: 40px;
 }}
-
-.passage {{
-  line-height: 1.5;
-  white-space: pre-wrap;
-  text-shadow: 0 0 12px rgba(0,0,0,0.7);
-  transition: font-size 0.25s ease-in-out;
+.reference {{
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
 }}
-
-.scrollable {{
-  max-height: 60vh;
+.passage-container {{
+  flex: 1;
   overflow-y: auto;
 }}
-
+.passage {{
+  white-space: pre-wrap;
+  line-height: 1.4;
+}}
 .verse-line {{
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }}
-
 .verse-number {{
-  color: #f1c40f;
-  font-weight: 600;
+  font-weight: bold;
   margin-right: 8px;
 }}
-
 .status-bar {{
+  padding: 10px;
   font-size: 14px;
-  opacity: 0.6;
-  margin-top: 16px;
+  color: #ddd;
 }}
 </style>
 </head>
@@ -1184,18 +1169,28 @@ body {{
 <body>
 <div class="wrapper">
   <div id="ref" class="reference">Waiting...</div>
-
   <div class="passage-container">
     <div id="text" class="passage"></div>
   </div>
-
   <div class="status-bar" id="status"></div>
 </div>
 
 <script>
+const supabase = window.supabase.createClient(
+  "https://jrgauouvwrqcmyqmwbrh.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q"
+);
+
+async function authHeaders() {{
+  const {{ data }} = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return {{
+    Authorization: `Bearer ${token}`
+  }};
+}}
+
 function renderPassage(rawText) {{
   const container = document.getElementById('text');
-
   if (!rawText) {{
     container.innerHTML = "";
     return;
@@ -1204,35 +1199,20 @@ function renderPassage(rawText) {{
   const lines = rawText.split(/\\r?\\n/).filter(l => l.trim().length > 0);
 
   let fontSize;
-  if (lines.length === 1) {{
-    fontSize = 50;
-  }} else if (lines.length === 2) {{
-    fontSize = 40;
-  }} else if (lines.length <= 4) {{
-    fontSize = 36;
-  }} else if (lines.length <= 7) {{
-    fontSize = 25;
-  }} else {{
-    fontSize = 20;
-  }}
+  if (lines.length === 1) fontSize = 50;
+  else if (lines.length === 2) fontSize = 40;
+  else if (lines.length <= 4) fontSize = 36;
+  else if (lines.length <= 7) fontSize = 25;
+  else fontSize = 20;
 
   container.style.fontSize = fontSize + "px";
-
-  if (lines.length > 3) {{
-    container.classList.add('scrollable');
-  }} else {{
-    container.classList.remove('scrollable');
-  }}
 
   const htmlLines = lines.map(line => {{
     const match = line.match(/^\\s*([A-Za-z0-9 ]+\\s+\\d+:\\d+)(.*)$/);
     if (match) {{
-      const num = match[1].trim();
-      const rest = match[2] || "";
-      return `<span class="verse-line"><span class="verse-number">${{num}}</span>${{rest.trimStart()}}</span>`;
-    }} else {{
-      return `<span class="verse-line">${{line}}</span>`;
+      return `<span class="verse-line"><span class="verse-number">${{match[1].trim()}}</span>${{match[2].trimStart()}}</span>`;
     }}
+    return `<span class="verse-line">${{line}}</span>`;
   }});
 
   container.innerHTML = htmlLines.join("\\n");
@@ -1240,22 +1220,20 @@ function renderPassage(rawText) {{
 
 async function refresh() {{
   try {{
-    const r = await fetch('/current/{sid}');
+    const r = await fetch('/current/{sid}', {{
+      headers: await authHeaders()
+    }});
     const j = await r.json();
-    const statusEl = document.getElementById('status');
 
     if (j.current && j.current.best) {{
       const v = j.current.best;
-      const ref = v.reference || v.ref || '';
-      const text = v.text_kjv || v.text || '';
-
-      document.getElementById('ref').innerText = ref || ' ';
-      renderPassage(text);
-      statusEl.innerText = '';
+      document.getElementById('ref').innerText = v.reference || v.ref || '';
+      renderPassage(v.text_kjv || v.text || '');
+      document.getElementById('status').innerText = '';
     }} else {{
       document.getElementById('ref').innerText = 'Waiting...';
       document.getElementById('text').innerHTML = '';
-      statusEl.innerText = j.status ? `Status: ${{j.status}}` : '';
+      document.getElementById('status').innerText = j.status ? `Status: ${{j.status}}` : '';
     }}
   }} catch (e) {{
     document.getElementById('status').innerText = 'Connection error – retrying...';

@@ -39,7 +39,6 @@ def get_user_church_id(user_id: str):
     rows = res.data or []
     return rows[0]["church_id"] if rows else None
 
-
 # =========================================================
 # INVITE OPERATOR
 # =========================================================
@@ -49,6 +48,7 @@ def invite_operator(
     payload: InviteOperatorRequest,
     auth_user=Depends(get_current_auth_user),
 ):
+    print("ROUTER: about to call send_operator_invitation_email")
     supabase = get_admin_supabase()
     auth_user_id = auth_user.id
 
@@ -270,6 +270,10 @@ def get_invitation_details(token: UUID):
     )
 
 
+import os
+from datetime import datetime, timezone
+from fastapi import HTTPException
+
 # =========================================================
 # ACCEPT INVITATION
 # =========================================================
@@ -283,6 +287,8 @@ def accept_invitation(payload: AcceptInvitationRequest):
 
     if not full_name:
         raise HTTPException(400, "Full name is required")
+
+    frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
 
     # 1. Lookup invitation
     invite_res = (
@@ -321,11 +327,15 @@ def accept_invitation(payload: AcceptInvitationRequest):
         else:
             raise
 
-    # 3. Generate magic link
+    # 3. Generate magic link that returns user to dashboard
+    redirect_to = f"{frontend_base_url}/dashboard"
+
     magic = supabase.auth.admin.generate_link({
         "type": "magiclink",
         "email": invited_email,
-        "options": {"redirect_to": "http://localhost:5173/dashboard"},
+        "options": {
+            "redirect_to": redirect_to
+        },
     })
 
     login_url = magic.properties.action_link
@@ -337,7 +347,15 @@ def accept_invitation(payload: AcceptInvitationRequest):
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "user_id": user_id,
     }).eq("id", invite["id"]).execute()
-
+    # ⭐ ADD THIS BLOCK
+    supabase.table("users").upsert({
+        "id": user_id,
+        "full_name": full_name,
+        "email": invited_email,
+        "church_id": invite["church_id"],
+        "role": "operator",
+        "status": "active",
+    }).execute()
     return AcceptInvitationResponse(
         message=f"Invitation accepted successfully. Welcome, {full_name}!",
         login_url=login_url,

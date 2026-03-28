@@ -10,6 +10,9 @@ router = APIRouter(
 )
 
 
+# =========================================================
+# START SESSION
+# =========================================================
 @router.post("/start", response_model=SessionResponse)
 def start_session(
     payload: StartSessionRequest,
@@ -54,12 +57,11 @@ def start_session(
             detail="This church already has an active session.",
         )
 
-    # Create new session
+    # Create new session (no title)
     session_res = (
         supabase.table("service_sessions")
         .insert({
             "church_id": church_id,
-            "title": payload.title.strip(),
             "created_by": auth_user_id,
         })
         .execute()
@@ -77,11 +79,14 @@ def start_session(
     return SessionResponse(
         id=session["id"],
         church_id=session["church_id"],
-        title=session["title"],
         started_at=session.get("started_at"),
         ended_at=session.get("ended_at"),
     )
 
+
+# =========================================================
+# GET CURRENT SESSION
+# =========================================================
 @router.get("/current", response_model=SessionResponse)
 def get_current_session(auth_user=Depends(get_current_auth_user)):
     supabase = get_admin_supabase()
@@ -105,10 +110,10 @@ def get_current_session(auth_user=Depends(get_current_auth_user)):
 
     church_id = user_rows[0]["church_id"]
 
-    # Find active session = session with no ended_at
+    # Find active session
     session_res = (
         supabase.table("service_sessions")
-        .select("id, church_id, title, started_at, ended_at")
+        .select("id, church_id, started_at, ended_at")
         .eq("church_id", church_id)
         .is_("ended_at", None)
         .order("started_at", desc=True)
@@ -128,10 +133,14 @@ def get_current_session(auth_user=Depends(get_current_auth_user)):
     return SessionResponse(
         id=session["id"],
         church_id=session["church_id"],
-        title=session["title"],
         started_at=session.get("started_at"),
         ended_at=session.get("ended_at"),
     )
+
+
+# =========================================================
+# END SESSION
+# =========================================================
 @router.post("/end", response_model=SessionResponse)
 def end_session(auth_user=Depends(get_current_auth_user)):
     supabase = get_admin_supabase()
@@ -155,10 +164,10 @@ def end_session(auth_user=Depends(get_current_auth_user)):
 
     church_id = user_rows[0]["church_id"]
 
-    # Find active session = session with no ended_at
+    # Find active session
     session_res = (
         supabase.table("service_sessions")
-        .select("id, church_id, title, started_at, ended_at")
+        .select("id, church_id, started_at, ended_at")
         .eq("church_id", church_id)
         .is_("ended_at", None)
         .order("started_at", desc=True)
@@ -199,10 +208,14 @@ def end_session(auth_user=Depends(get_current_auth_user)):
     return SessionResponse(
         id=updated["id"],
         church_id=updated["church_id"],
-        title=updated["title"],
         started_at=updated.get("started_at"),
         ended_at=updated.get("ended_at"),
     )
+
+
+# =========================================================
+# SESSION HISTORY
+# =========================================================
 @router.get("/history", response_model=list[SessionHistoryItem])
 def get_session_history(auth_user=Depends(get_current_auth_user)):
     supabase = get_admin_supabase()
@@ -226,10 +239,10 @@ def get_session_history(auth_user=Depends(get_current_auth_user)):
 
     church_id = user_rows[0]["church_id"]
 
-    # Get recent sessions for this church
+    # Get recent sessions
     session_res = (
         supabase.table("service_sessions")
-        .select("id, church_id, title, started_at, ended_at")
+        .select("id, church_id, started_at, ended_at")
         .eq("church_id", church_id)
         .order("created_at", desc=True)
         .limit(50)
@@ -242,7 +255,6 @@ def get_session_history(auth_user=Depends(get_current_auth_user)):
         SessionHistoryItem(
             id=row["id"],
             church_id=row["church_id"],
-            title=row["title"],
             started_at=row.get("started_at"),
             ended_at=row.get("ended_at"),
         )

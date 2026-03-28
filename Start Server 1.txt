@@ -3,7 +3,7 @@ TO RUN ON LOCAL ---- NO custom domain required.
 Start FASTAPI Server 1
 
 cd C:\kjv_project
-python -m uvicorn api_server:app --reload
+py -3.12 -m uvicorn api_server:app --reload
 
 http://127.0.0.1:8000/presenter/demo
 

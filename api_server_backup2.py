@@ -1,9 +1,21 @@
+print(">>> LOADING API_SERVER FROM:", __file__)
+
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
+from dotenv import load_dotenv
+import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+from routers.onboarding import router as onboarding_router
+from routers.sessions import router as sessions_router
+from routers.operators import router as operators_router
+
+from core.supabase import get_admin_supabase
+from core.auth import get_current_auth_user
 
 import json
 import time
@@ -11,6 +23,7 @@ import re
 import logging
 from collections import Counter
 from typing import Dict, Any, List, Optional
+from datetime import datetime
 
 # =========================================================
 # IMPORT MATCH ENGINE
@@ -20,7 +33,7 @@ from match_verse import (
     load_verses_index,
     load_json,
     build_phrase_lookup,
-    match_scripture
+    match_scripture,
 )
 
 # =========================================================
@@ -33,7 +46,7 @@ KEYWORD_INDEX_FILE = "keyword_index.json"
 PHRASE_DICT_FILE = "phrase_dictionary.json"
 
 # =========================================================
-# LOAD MATCH DATA
+# LOAD MATCH DATA (BLOCK 1 — USING load_verses_index)
 # =========================================================
 
 VERSES = load_verses_index()
@@ -76,18 +89,50 @@ MIN_TOKENS_FOR_KEYWORD_MODE = 4
 
 DEBUG_MATCH_LOGS = False
 
+
 def debug_log(*args):
     if DEBUG_MATCH_LOGS:
         print(*args)
+
 
 # =========================================================
 # TOKENIZATION
 # =========================================================
 
 STOPWORDS = {
-    "the","and","of","to","in","that","a","an","for","is","it","as","be",
-    "with","by","this","from","or","at","was","were","are","but","not",
-    "into","unto","thou","thee","thy","ye","you","your","yours",
+    "the",
+    "and",
+    "of",
+    "to",
+    "in",
+    "that",
+    "a",
+    "an",
+    "for",
+    "is",
+    "it",
+    "as",
+    "be",
+    "with",
+    "by",
+    "this",
+    "from",
+    "or",
+    "at",
+    "was",
+    "were",
+    "are",
+    "but",
+    "not",
+    "into",
+    "unto",
+    "thou",
+    "thee",
+    "thy",
+    "ye",
+    "you",
+    "your",
+    "yours",
 }
 TOKEN_RE = re.compile(r"[a-z0-9']+")
 
@@ -108,69 +153,165 @@ def is_quote_like(tokens: List[str]) -> bool:
     return len(tokens) >= MIN_TOKENS_FOR_KEYWORD_MODE
 
 # =========================================================
-# LOAD DATA
-# =========================================================
-
-try:
-    VERSES: Dict[str, Dict[str, Any]] = load_json(VERSES_FILE)
-except FileNotFoundError:
-    VERSES = load_json(FALLBACK_VERSES_FILE)
-
-KEYWORD_INDEX: Dict[str, List[str]] = load_json(KEYWORD_INDEX_FILE)
-
-try:
-    PHRASE_ENTRIES = load_json(PHRASE_DICT_FILE)
-except FileNotFoundError:
-    PHRASE_ENTRIES = []
-
-PHRASE_LOOKUP: Dict[str, List[Dict[str, Any]]] = {}
-for e in PHRASE_ENTRIES:
-    p = normalize_text(e.get("phrase", ""))
-    if p:
-        PHRASE_LOOKUP.setdefault(p, []).append(e)
-
-# =========================================================
 # REFERENCE PARSING (WITH RANGE SUPPORT)
 # =========================================================
 
 BOOK_ALIASES = {
-    "genesis":"Genesis","gen":"Genesis",
-    "exodus":"Exodus","exo":"Exodus",
-    "leviticus":"Leviticus","lev":"Leviticus",
-    "numbers":"Numbers","num":"Numbers",
-    "deuteronomy":"Deuteronomy","deut":"Deuteronomy",
-    "joshua":"Joshua","josh":"Joshua",
-    "judges":"Judges",
-    "ruth":"Ruth",
-    "1 samuel":"1 Samuel","2 samuel":"2 Samuel",
-    "1 kings":"1 Kings","2 kings":"2 Kings",
-    "psalm":"Psalms","psalms":"Psalms",
-    "proverbs":"Proverbs",
-    "isaiah":"Isaiah",
-    "jeremiah":"Jeremiah",
-    "ezekiel":"Ezekiel",
-    "daniel":"Daniel",
-    "matthew":"Matthew",
-    "mark":"Mark",
-    "luke":"Luke",
-    "john":"John",
-    "acts":"Acts",
-    "romans":"Romans",
-    "1 corinthians":"1 Corinthians",
-    "2 corinthians":"2 Corinthians",
-    "galatians":"Galatians",
-    "ephesians":"Ephesians",
-    "philippians":"Philippians",
-    "colossians":"Colossians",
-    "1 thessalonians":"1 Thessalonians",
-    "2 thessalonians":"2 Thessalonians",
-    "1 timothy":"1 Timothy",
-    "2 timothy":"2 Timothy",
-    "hebrews":"Hebrews",
-    "james":"James",
-    "1 peter":"1 Peter",
-    "2 peter":"2 Peter",
-    "revelation":"Revelation",
+    "genesis": "Genesis",
+    "gen": "Genesis",
+    "exodus": "Exodus",
+    "exo": "Exodus",
+    "exod": "Exodus",
+    "leviticus": "Leviticus",
+    "lev": "Leviticus",
+    "numbers": "Numbers",
+    "num": "Numbers",
+    "deuteronomy": "Deuteronomy",
+    "deut": "Deuteronomy",
+    "joshua": "Joshua",
+    "josh": "Joshua",
+    "judges": "Judges",
+    "judg": "Judges",
+    "ruth": "Ruth",
+    "1 samuel": "1 Samuel",
+    "first samuel": "1 Samuel",
+    "1st samuel": "1 Samuel",
+    "i samuel": "1 Samuel",
+    "2 samuel": "2 Samuel",
+    "second samuel": "2 Samuel",
+    "2nd samuel": "2 Samuel",
+    "ii samuel": "2 Samuel",
+    "1 kings": "1 Kings",
+    "first kings": "1 Kings",
+    "1st kings": "1 Kings",
+    "i kings": "1 Kings",
+    "2 kings": "2 Kings",
+    "second kings": "2 Kings",
+    "2nd kings": "2 Kings",
+    "ii kings": "2 Kings",
+    "1 chronicles": "1 Chronicles",
+    "first chronicles": "1 Chronicles",
+    "1st chronicles": "1 Chronicles",
+    "i chronicles": "1 Chronicles",
+    "2 chronicles": "2 Chronicles",
+    "second chronicles": "2 Chronicles",
+    "2nd chronicles": "2 Chronicles",
+    "ii chronicles": "2 Chronicles",
+    "ezra": "Ezra",
+    "nehemiah": "Nehemiah",
+    "neh": "Nehemiah",
+    "esther": "Esther",
+    "job": "Job",
+    "psalm": "Psalms",
+    "psalms": "Psalms",
+    "ps": "Psalms",
+    "proverbs": "Proverbs",
+    "prov": "Proverbs",
+    "ecclesiastes": "Ecclesiastes",
+    "eccl": "Ecclesiastes",
+    "song of solomon": "Song of Solomon",
+    "song of songs": "Song of Solomon",
+    "songs of solomon": "Song of Solomon",
+    "solomon": "Song of Solomon",
+    "isaiah": "Isaiah",
+    "isa": "Isaiah",
+    "jeremiah": "Jeremiah",
+    "jer": "Jeremiah",
+    "lamentations": "Lamentations",
+    "lam": "Lamentations",
+    "ezekiel": "Ezekiel",
+    "ezek": "Ezekiel",
+    "daniel": "Daniel",
+    "dan": "Daniel",
+    "hosea": "Hosea",
+    "joel": "Joel",
+    "amos": "Amos",
+    "obadiah": "Obadiah",
+    "obad": "Obadiah",
+    "jonah": "Jonah",
+    "micah": "Micah",
+    "nahum": "Nahum",
+    "habakkuk": "Habakkuk",
+    "hab": "Habakkuk",
+    "zephaniah": "Zephaniah",
+    "zeph": "Zephaniah",
+    "haggai": "Haggai",
+    "zechariah": "Zechariah",
+    "zech": "Zechariah",
+    "malachi": "Malachi",
+    "mal": "Malachi",
+    "matthew": "Matthew",
+    "matt": "Matthew",
+    "mark": "Mark",
+    "luke": "Luke",
+    "john": "John",
+    "acts": "Acts",
+    "romans": "Romans",
+    "rom": "Romans",
+    "romance": "Romans",
+    "1 corinthians": "1 Corinthians",
+    "1 cor": "1 Corinthians",
+    "first corinthians": "1 Corinthians",
+    "1st corinthians": "1 Corinthians",
+    "i corinthians": "1 Corinthians",
+    "2 corinthians": "2 Corinthians",
+    "2 cor": "2 Corinthians",
+    "second corinthians": "2 Corinthians",
+    "2nd corinthians": "2 Corinthians",
+    "ii corinthians": "2 Corinthians",
+    "galatians": "Galatians",
+    "gal": "Galatians",
+    "ephesians": "Ephesians",
+    "eph": "Ephesians",
+    "philippians": "Philippians",
+    "phil": "Philippians",
+    "colossians": "Colossians",
+    "col": "Colossians",
+    "1 thessalonians": "1 Thessalonians",
+    "first thessalonians": "1 Thessalonians",
+    "1st thessalonians": "1 Thessalonians",
+    "i thessalonians": "1 Thessalonians",
+    "2 thessalonians": "2 Thessalonians",
+    "second thessalonians": "2 Thessalonians",
+    "2nd thessalonians": "2 Thessalonians",
+    "ii thessalonians": "2 Thessalonians",
+    "1 timothy": "1 Timothy",
+    "first timothy": "1 Timothy",
+    "1st timothy": "1 Timothy",
+    "i timothy": "1 Timothy",
+    "2 timothy": "2 Timothy",
+    "second timothy": "2 Timothy",
+    "2nd timothy": "2 Timothy",
+    "ii timothy": "2 Timothy",
+    "titus": "Titus",
+    "philemon": "Philemon",
+    "hebrews": "Hebrews",
+    "heb": "Hebrews",
+    "james": "James",
+    "1 peter": "1 Peter",
+    "first peter": "1 Peter",
+    "1st peter": "1 Peter",
+    "i peter": "1 Peter",
+    "2 peter": "2 Peter",
+    "second peter": "2 Peter",
+    "2nd peter": "2 Peter",
+    "ii peter": "2 Peter",
+    "1 john": "1 John",
+    "first john": "1 John",
+    "1st john": "1 John",
+    "i john": "1 John",
+    "2 john": "2 John",
+    "second john": "2 John",
+    "2nd john": "2 John",
+    "ii john": "2 John",
+    "3 john": "3 John",
+    "third john": "3 John",
+    "3rd john": "3 John",
+    "iii john": "3 John",
+    "jude": "Jude",
+    "revelation": "Revelation",
+    "revelations": "Revelation",
+    "rev": "Revelation",
 }
 
 BOOK_PATTERN = "|".join(sorted(BOOK_ALIASES.keys(), key=len, reverse=True))
@@ -190,7 +331,9 @@ def parse_reference(text: str):
     t = normalize_text(text or "")
 
     # RANGE: John 3:16-18
-    m = re.search(rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\s*[-–]\s*(\d+)\b", raw, re.IGNORECASE)
+    m = re.search(
+        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\s*[-–]\s*(\d+)\b", raw, re.IGNORECASE
+    )
     if m:
         return {
             "type": "range",
@@ -230,7 +373,9 @@ def parse_reference(text: str):
         }
 
     # SINGLE: John 3:16
-    m = re.search(rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\b", t, re.IGNORECASE)
+    m = re.search(
+        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\b", t, re.IGNORECASE
+    )
     if m:
         return {
             "type": "single",
@@ -322,7 +467,7 @@ def match_text(text: str):
     return match_scripture(text, VERSES, KEYWORD_INDEX, PHRASE_LOOKUP)
 
 # =========================================================
-# SESSION STATE
+# SESSION STATE (IN-MEMORY)
 # =========================================================
 
 def new_session():
@@ -335,10 +480,11 @@ def new_session():
         "buffer": "",
     }
 
+
 SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 
-def get_session(sid):
+def get_session(sid: str):
     if sid not in SESSIONS:
         SESSIONS[sid] = new_session()
     return SESSIONS[sid]
@@ -346,7 +492,10 @@ def get_session(sid):
 
 def debounce(session, text):
     now = time.time()
-    if session["last_input"] == text and (now - session["last_at"]) * 1000 < DEBOUNCE_MS:
+    if (
+        session["last_input"] == text
+        and (now - session["last_at"]) * 1000 < DEBOUNCE_MS
+    ):
         return True
     session["last_input"] = text
     session["last_at"] = now
@@ -360,65 +509,299 @@ def held(session, mode):
         return False
     return (time.time() - session["current_at"]) < HOLD_SECONDS
 
-# =========================================================
+# ============================================================
 # FASTAPI APP
-# =========================================================
+# ============================================================
 
 app = FastAPI()
+
+# ------------------------------
+# CORS CONFIGURATION
+# ------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://versecast-site.onrender.com",
+        "https://www.versecast.ca",
+        "https://versecast.ca",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ============================================================
+# MANUAL MATCH ROUTE — MUST BE ABOVE ROUTER INCLUDES
+# ============================================================
+
+@app.post("/match")
+def match_route(payload: Dict[str, Any]):
+    print(">>> ENTERED /match ROUTE <<<")
+    try:
+        sid = payload.get("session_id", "demo")
+        text = payload.get("text", "").strip()
+        s = get_session(sid)
+
+        print("TEXT:", repr(text))
+
+        r = match_text(text)
+        print("MATCH RESULT:", r)
+
+        if not r.get("best"):
+            return {"status": "no_match"}
+
+        # ⭐ DO NOT auto-display
+        # s["current"] = r   <-- REMOVE THIS
+
+        # ⭐ Store match in pending (correct behavior)
+        s["pending"] = r
+
+        return {"status": "pending", "result": r}
+
+    except Exception as e:
+        print("ERROR IN /match:", e)
+        return {"status": "error", "detail": str(e)}
+
+# ============================================================
+# ROUTERS — MUST COME AFTER /match
+# ============================================================
+
+app.include_router(onboarding_router)
+app.include_router(sessions_router)
+app.include_router(operators_router)
+
+
+# -------------------------
+# LOGGING
+# -------------------------
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
+# -------------------------
+# GLOBAL EXCEPTION HANDLER
+# -------------------------
 
 @app.exception_handler(Exception)
 async def handler(request, exc):
-    return JSONResponse(status_code=500, content={"error": str(exc)})
+    origin = request.headers.get("origin")
+    headers = {}
+
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc)},
+        headers=headers
+    )
 
 
+# -------------------------
+# HEALTH CHECK
+# -------------------------
 @app.get("/health")
 def health():
     return {"ok": True}
 
 # =========================================================
-# MANUAL MATCH
+# SUPABASE HELPERS FOR MULTI-TENANCY
 # =========================================================
+
+def get_current_session_for_church(church_id: str):
+    supabase = get_admin_supabase()
+
+    res = (
+        supabase.table("service_sessions")
+        .select("id, church_id, title, started_at, ended_at")
+        .eq("church_id", church_id)
+        .is_("ended_at", None)
+        .order("started_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    rows = res.data or []
+    if not rows:
+        return None
+
+    return rows[0]
+
+
+def get_user_church_id(user_id: str):
+    supabase = get_admin_supabase()
+
+    res = (
+        supabase.table("users")
+        .select("church_id")
+        .eq("id", user_id)
+        .limit(1)
+        .execute()
+    )
+
+    rows = res.data or []
+    if not rows:
+        return None
+
+    return rows[0]["church_id"]
+
+
+def get_current_session_for_user(user_id: str):
+    church_id = get_user_church_id(user_id)
+    if not church_id:
+        return None
+
+    return get_current_session_for_church(church_id)
+
+# =========================================================
+# SAAS SESSION ENDPOINTS (TENANT-AWARE)
+# =========================================================
+
+@app.get("/saas/session/current")
+def saas_current_session(auth_user=Depends(get_current_auth_user)):
+    """
+    Return the current active session for the authenticated user's church.
+    """
+    session = get_current_session_for_user(auth_user.id)
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session found for this user.",
+        )
+
+    return session
+
+
+@app.post("/saas/session/start")
+def saas_start_session(auth_user=Depends(get_current_auth_user)):
+    """
+    Start a new service session for the authenticated user's church.
+    """
+    church_id = get_user_church_id(auth_user.id)
+    if not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not linked to a church.",
+        )
+
+    supabase = get_admin_supabase()
+
+    res = (
+        supabase.table("service_sessions")
+        .insert(
+            {
+                "church_id": church_id,
+                "title": "Live Service",
+                "started_at": datetime.utcnow().isoformat() + "Z",
+                "ended_at": None,
+            }
+        )
+        .select("id, church_id, title, started_at, ended_at")
+        .single()
+        .execute()
+    )
+
+    session = res.data
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create session.",
+        )
+
+    return session
+
+
+@app.get("/saas/session/history")
+def saas_session_history(auth_user=Depends(get_current_auth_user)):
+    """
+    Return recent sessions for the authenticated user's church.
+    """
+    church_id = get_user_church_id(auth_user.id)
+    if not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not linked to a church.",
+        )
+
+    supabase = get_admin_supabase()
+
+    res = (
+        supabase.table("service_sessions")
+        .select("id, church_id, title, started_at, ended_at")
+        .eq("church_id", church_id)
+        .order("started_at", desc=True)
+        .limit(50)
+        .execute()
+    )
+
+    return res.data or []
+
+# =========================================================
+# LIVE REDIRECTS (TENANT-AWARE)
+# =========================================================
+
+@app.get("/control/live")
+def control_live(auth_user=Depends(get_current_auth_user)):
+    session = get_current_session_for_user(auth_user.id)
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session found for this user.",
+        )
+
+    sid = session["id"]
+    return RedirectResponse(url=f"/control/{sid}", status_code=307)
+
+
+@app.get("/presenter/live")
+def presenter_live(auth_user=Depends(get_current_auth_user)):
+    session = get_current_session_for_user(auth_user.id)
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session found for this user.",
+        )
+
+    sid = session["id"]
+    return RedirectResponse(url=f"/presenter/{sid}", status_code=307)
+
+# =========================================================
+# MANUAL MATCH MULTI TENANT SESSION AWARE
+# =========================================================
+import match_verse
+print(">>> ENTERED /match ROUTE <<<")
+
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    sid = payload.get("session_id", "demo")
-    text = payload.get("text", "").strip()
-    s = get_session(sid)
+    print(">>> ENTERED /match ROUTE <<<")
+    try:
+        sid = payload.get("session_id", "demo")
+        text = payload.get("text", "").strip()
+        s = get_session(sid)
 
-    debug_log("MATCH_ROUTE_TEXT:", repr(text))
+        print("TEXT:", repr(text))
 
-    if debounce(s, text):
-        debug_log("MATCH_ROUTE_RESULT: duplicate")
-        return {"status": "duplicate"}
+        r = match_text(text)
+        print("MATCH RESULT:", r)
 
-    r = match_text(text)
-    debug_log("MATCH_ROUTE_MATCH_TEXT_RESULT:", r)
-
-    if not r.get("best"):
-        debug_log("MATCH_ROUTE_RESULT: no_match")
-        return {"status": "no_match"}
-
-    if held(s, r["mode"]):
-        debug_log("MATCH_ROUTE_RESULT: held")
-        return {"status": "held"}
-
-    if DISPLAY_MODE == "assist" and not (
-        REFERENCE_AUTODISPLAY_IN_ASSIST and r["mode"] in ("reference", "reference_range")
-    ):
-        if r["mode"] == "keyword" and r["confidence"] < KEYWORD_MIN_CONFIDENCE_TO_SUGGEST:
-            debug_log("MATCH_ROUTE_RESULT: no_match(keyword low confidence)")
+        if not r.get("best"):
             return {"status": "no_match"}
-        s["pending"] = r
-        debug_log("MATCH_ROUTE_RESULT: pending")
-        return {"status": "pending", "result": r}
 
-    s["current"] = r
-    s["current_at"] = time.time()
-    s["pending"] = None
-    debug_log("MATCH_ROUTE_RESULT: displayed")
-    return {"status": "displayed", "result": r}
+        s["current"] = r
+        return {"status": "displayed", "result": r}
+
+    except Exception as e:
+        print("ERROR IN /match:", e)
+        return {"status": "error", "detail": str(e)}
+
+
 
 # =========================================================
 # INGEST (for STT OR any external client)
@@ -426,7 +809,10 @@ def match_route(payload: Dict[str, Any]):
 
 @app.post("/ingest")
 def ingest(payload: Dict[str, Any]):
-    sid = payload.get("session_id", "demo")
+    sid = payload.get("session_id")
+    if not sid:
+        return {"status": "error", "detail": "Missing session_id in ingest payload"}
+
     text = payload.get("text", "").strip()
     is_final = bool(payload.get("is_final"))
 
@@ -443,7 +829,7 @@ def ingest(payload: Dict[str, Any]):
     return match_route({"session_id": sid, "text": final})
 
 # =========================================================
-# APPROVAL
+# REAL-TIME SESSION ACTIONS (PUBLIC, SESSION-ID–SCOPED)
 # =========================================================
 
 @app.post("/approve/{sid}")
@@ -453,6 +839,7 @@ def approve(sid: str):
         return {"status": "no_pending"}
     if held(s, s["pending"]["mode"]):
         return {"status": "held"}
+
     s["current"] = s["pending"]
     s["current_at"] = time.time()
     s["pending"] = None
@@ -473,10 +860,13 @@ def clear_all(sid: str):
 
 
 @app.get("/current/{sid}")
-def current(sid: str):
+def get_current_state(sid: str):
     s = get_session(sid)
-    return {"current": s["current"], "pending": s["pending"]}
-
+    return {
+        "status": s.get("status", "idle"),
+        "pending": s.get("pending"),
+        "current": s.get("current"),
+    }
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)
 # =========================================================
@@ -489,8 +879,11 @@ def control_root():
 @app.get("/control/{sid}", response_class=HTMLResponse)
 def control(sid: str):
     return f"""
+<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8" />
+
 <style>
 body {{
   font-family: "Segoe UI", Arial, sans-serif;
@@ -511,73 +904,54 @@ h1 {{
   font-size: 30px;
   font-weight: 800;
 }}
-.config-line {{
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 20px;
-}}
 .section-title {{
-  font-size: 18px;
-  font-weight: 600;
-  margin-top: 25px;
+  margin-top: 30px;
   margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 700;
 }}
 .input-row {{
   display: flex;
   gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
 }}
 .input-row input {{
   flex: 1;
-  height: 48px;
-  font-size: 18px;
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 10px;
+  font-size: 16px;
 }}
 button {{
-  background: #0078ff;
-  color: white;
-  border: none;
   padding: 10px 18px;
-  border-radius: 6px;
   font-size: 15px;
+  border-radius: 6px;
   cursor: pointer;
+  border: none;
+  background: #2563eb;
+  color: white;
 }}
-button:hover {{
-  background: #005fcc;
-}}
-.danger {{
-  background: #d9534f;
-}}
-.danger:hover {{
-  background: #b52b27;
+button.danger {{
+  background: #dc2626;
 }}
 .pending-box {{
-  background: #fff8e1;
-  border-left: 5px solid #ffb300;
+  background: #fef3c7;
   padding: 15px;
-  border-radius: 6px;
-  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
 }}
 .pending-header {{
-  font-weight: 600;
-  margin-bottom: 5px;
-}}
-.pending-meta {{
-  font-size: 13px;
-  color: #555;
-  margin-top: 5px;
+  font-weight: bold;
+  margin-bottom: 8px;
 }}
 .verse-box {{
-  background: #f0f0f0;
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 8px;
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: 18px;
+  margin-bottom: 8px;
 }}
+.pending-meta {{
+  font-size: 14px;
+  color: #555;
+}}
+
+/* ⭐ Restored original status box styling */
 pre {{
   background: #1e1e1e;
   color: #0f0;
@@ -587,27 +961,24 @@ pre {{
   white-space: pre-wrap;
   font-size: 14px;
 }}
-.hint {{
-  font-size: 12px;
-  color: #777;
-  margin-top: 10px;
-}}
 </style>
 </head>
+
 <body>
 <div class="panel">
   <h1>VerseCast Control Panel (session: {sid})</h1>
 
-<div class="config-line">
-Mode: {DISPLAY_MODE} | Hold: {int(HOLD_SECONDS)}s
-</div>
+  <div style="margin-top: 10px; margin-bottom: 20px;">
+    <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
+      Open Presenter
+    </button>
+  </div>
 
   <div class="section-title">Enter Reference or Phrase</div>
   <div class="input-row">
     <input id="t" value=""/>
     <button onclick="match()">Match</button>
   </div>
-  <div class="hint"></div>
 
   <div class="section-title">Pending (Best)</div>
   <div id="pending_box" class="pending-box" style="display:none;">
@@ -630,37 +1001,41 @@ Mode: {DISPLAY_MODE} | Hold: {int(HOLD_SECONDS)}s
 </div>
 
 <script>
+// ------------------------------
+// REFRESH PANEL
+// ------------------------------
 async function refresh() {{
-  let r = await fetch('/current/{sid}');
+  let r = await fetch('/current/{sid}', {{
+    headers: {{ "Content-Type": "application/json" }}
+  }});
   let s = await r.json();
   let p = s.pending;
 
   if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
-
-    const v = p.best || {{}};
-    const ref = v.reference || v.ref || '';
-    const text = v.text_kjv || v.text || '';
-
-    document.getElementById('pending_ref').textContent = ref;
-    document.getElementById('pending_text').textContent = text;
+    const v = p.best;
+    document.getElementById('pending_ref').textContent = v.reference || v.ref || '';
+    document.getElementById('pending_text').textContent = v.text_kjv || v.text || '';
     document.getElementById('pending_mode').textContent = p.mode || '';
     document.getElementById('pending_conf').textContent = p.confidence ?? '';
-
   }} else {{
     document.getElementById('pending_box').style.display = 'none';
   }}
 }}
+
 function setStatusFromResponse(j) {{
   document.getElementById('status_box').textContent =
     JSON.stringify({{ status: j.status }}, null, 2);
 }}
 
+// ------------------------------
+// MATCH
+// ------------------------------
 async function match() {{
   let r = await fetch('/match', {{
     method:'POST',
-    headers:{{'Content-Type':'application/json'}},
-    body:JSON.stringify({{
+    headers: {{ "Content-Type": "application/json" }},
+    body: JSON.stringify({{
       session_id:'{sid}',
       text:document.getElementById('t').value
     }})
@@ -670,22 +1045,34 @@ async function match() {{
   await refresh();
 }}
 
+// ------------------------------
+// APPROVE / CLEAR
+// ------------------------------
 async function approve() {{
-  let r = await fetch('/approve/{sid}', {{ method:'POST' }});
+  let r = await fetch('/approve/{sid}', {{
+    method:'POST',
+    headers: {{ "Content-Type": "application/json" }}
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
 }}
 
 async function clearPending() {{
-  let r = await fetch('/clear_pending/{sid}', {{ method:'POST' }});
+  let r = await fetch('/clear_pending/{sid}', {{
+    method:'POST',
+    headers: {{ "Content-Type": "application/json" }}
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
 }}
 
 async function clearAll() {{
-  let r = await fetch('/clear_all/{sid}', {{ method:'POST' }});
+  let r = await fetch('/clear_all/{sid}', {{
+    method:'POST',
+    headers: {{ "Content-Type": "application/json" }}
+  }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
@@ -694,6 +1081,7 @@ async function clearAll() {{
 refresh();
 setInterval(refresh, 1500);
 </script>
+
 </body>
 </html>
 """
@@ -707,6 +1095,11 @@ def presenter_root():
     return RedirectResponse("/presenter/demo")
 
 
+@app.get("/presenter")
+def presenter_root():
+    return RedirectResponse("/presenter/demo")
+
+
 @app.get("/presenter/{sid}", response_class=HTMLResponse)
 def presenter(sid: str):
     return f"""
@@ -714,7 +1107,7 @@ def presenter(sid: str):
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Presenter – {sid}</title>
+
 <style>
 body {{
   margin: 0;
@@ -726,60 +1119,37 @@ body {{
   flex-direction: column;
   height: 100vh;
 }}
-
 .wrapper {{
-  padding: 48px 72px;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}}
-
-.reference {{
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #f9e79f;
-  margin-bottom: 24px;
-}}
-
-.passage-container {{
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  max-width: 1200px;
+  padding: 40px;
 }}
-
-.passage {{
-  line-height: 1.5;
-  white-space: pre-wrap;
-  text-shadow: 0 0 12px rgba(0,0,0,0.7);
-  transition: font-size 0.25s ease-in-out;
+.reference {{
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
 }}
-
-.scrollable {{
-  max-height: 60vh;
+.passage-container {{
+  flex: 1;
   overflow-y: auto;
 }}
-
+.passage {{
+  white-space: pre-wrap;
+  line-height: 1.4;
+}}
 .verse-line {{
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }}
-
 .verse-number {{
-  color: #f1c40f;
-  font-weight: 600;
+  font-weight: bold;
   margin-right: 8px;
 }}
-
 .status-bar {{
+  padding: 10px;
   font-size: 14px;
-  opacity: 0.6;
-  margin-top: 16px;
+  color: #ddd;
 }}
 </style>
 </head>
@@ -787,18 +1157,19 @@ body {{
 <body>
 <div class="wrapper">
   <div id="ref" class="reference">Waiting...</div>
-
   <div class="passage-container">
     <div id="text" class="passage"></div>
   </div>
-
   <div class="status-bar" id="status"></div>
 </div>
 
 <script>
+
+// ------------------------------
+// RENDER PASSAGE
+// ------------------------------
 function renderPassage(rawText) {{
   const container = document.getElementById('text');
-
   if (!rawText) {{
     container.innerHTML = "";
     return;
@@ -807,58 +1178,44 @@ function renderPassage(rawText) {{
   const lines = rawText.split(/\\r?\\n/).filter(l => l.trim().length > 0);
 
   let fontSize;
-  if (lines.length === 1) {{
-    fontSize = 50;
-  }} else if (lines.length === 2) {{
-    fontSize = 40;
-  }} else if (lines.length <= 4) {{
-    fontSize = 36;
-  }} else if (lines.length <= 7) {{
-    fontSize = 25;
-  }} else {{
-    fontSize = 20;
-  }}
+  if (lines.length === 1) fontSize = 50;
+  else if (lines.length === 2) fontSize = 40;
+  else if (lines.length <= 4) fontSize = 36;
+  else if (lines.length <= 7) fontSize = 25;
+  else fontSize = 20;
 
   container.style.fontSize = fontSize + "px";
-
-  if (lines.length > 3) {{
-    container.classList.add('scrollable');
-  }} else {{
-    container.classList.remove('scrollable');
-  }}
 
   const htmlLines = lines.map(line => {{
     const match = line.match(/^\\s*([A-Za-z0-9 ]+\\s+\\d+:\\d+)(.*)$/);
     if (match) {{
-      const num = match[1].trim();
-      const rest = match[2] || "";
-      return `<span class="verse-line"><span class="verse-number">${{num}}</span>${{rest.trimStart()}}</span>`;
-    }} else {{
-      return `<span class="verse-line">${{line}}</span>`;
+      return `<span class="verse-line"><span class="verse-number">${{match[1].trim()}}</span>${{match[2].trimStart()}}</span>`;
     }}
+    return `<span class="verse-line">${{line}}</span>`;
   }});
 
   container.innerHTML = htmlLines.join("\\n");
 }}
 
+// ------------------------------
+// REFRESH LOOP
+// ------------------------------
 async function refresh() {{
   try {{
-    const r = await fetch('/current/{sid}');
+    const r = await fetch('/current/{sid}', {{
+      headers: {{ "Content-Type": "application/json" }}
+    }});
     const j = await r.json();
-    const statusEl = document.getElementById('status');
 
     if (j.current && j.current.best) {{
       const v = j.current.best;
-      const ref = v.reference || v.ref || '';
-      const text = v.text_kjv || v.text || '';
-
-      document.getElementById('ref').innerText = ref || ' ';
-      renderPassage(text);
-      statusEl.innerText = '';
+      document.getElementById('ref').innerText = v.reference || v.ref || '';
+      renderPassage(v.text_kjv || v.text || '');
+      document.getElementById('status').innerText = '';
     }} else {{
       document.getElementById('ref').innerText = 'Waiting...';
       document.getElementById('text').innerHTML = '';
-      statusEl.innerText = j.status ? `Status: ${{j.status}}` : '';
+      document.getElementById('status').innerText = j.status ? `Status: ${{j.status}}` : '';
     }}
   }} catch (e) {{
     document.getElementById('status').innerText = 'Connection error – retrying...';
@@ -867,6 +1224,7 @@ async function refresh() {{
 
 refresh();
 setInterval(refresh, 700);
+
 </script>
 
 </body>

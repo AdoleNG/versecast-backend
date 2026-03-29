@@ -1,3 +1,5 @@
+print(">>> LOADING API_SERVER FROM:", __file__)
+
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
@@ -149,28 +151,6 @@ def tokenize(s: str) -> List[str]:
 
 def is_quote_like(tokens: List[str]) -> bool:
     return len(tokens) >= MIN_TOKENS_FOR_KEYWORD_MODE
-
-# =========================================================
-# LOAD DATA (LEGACY BLOCK 2 — EXACTLY AS ORIGINAL)
-# =========================================================
-
-try:
-    VERSES: Dict[str, Dict[str, Any]] = load_json(VERSES_FILE)
-except FileNotFoundError:
-    VERSES = load_json(FALLBACK_VERSES_FILE)
-
-KEYWORD_INDEX: Dict[str, List[str]] = load_json(KEYWORD_INDEX_FILE)
-
-try:
-    PHRASE_ENTRIES = load_json(PHRASE_DICT_FILE)
-except FileNotFoundError:
-    PHRASE_ENTRIES = []
-
-PHRASE_LOOKUP: Dict[str, List[Dict[str, Any]]] = {}
-for e in PHRASE_ENTRIES:
-    p = normalize_text(e.get("phrase", ""))
-    if p:
-        PHRASE_LOOKUP.setdefault(p, []).append(e)
 
 # =========================================================
 # REFERENCE PARSING (WITH RANGE SUPPORT)
@@ -535,9 +515,9 @@ def held(session, mode):
 
 app = FastAPI()
 
-# -------------------------
-# CORS CONFIGURATION (FIXED)
-# -------------------------
+# ------------------------------
+# CORS CONFIGURATION
+# ------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -553,12 +533,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# -------------------------
-# ROUTERS
-# -------------------------
+
+# ============================================================
+# MANUAL MATCH ROUTE — MUST BE ABOVE ROUTER INCLUDES
+# ============================================================
+
+@app.post("/match")
+def match_route(payload: Dict[str, Any]):
+    print(">>> ENTERED /match ROUTE <<<")
+    try:
+        sid = payload.get("session_id", "demo")
+        text = payload.get("text", "").strip()
+        s = get_session(sid)
+
+        print("TEXT:", repr(text))
+
+        r = match_text(text)
+        print("MATCH RESULT:", r)
+
+        if not r.get("best"):
+            return {"status": "no_match"}
+
+        # ⭐ DO NOT auto-display
+        # s["current"] = r   <-- REMOVE THIS
+
+        # ⭐ Store match in pending (correct behavior)
+        s["pending"] = r
+
+        return {"status": "pending", "result": r}
+
+    except Exception as e:
+        print("ERROR IN /match:", e)
+        return {"status": "error", "detail": str(e)}
+
+# ============================================================
+# ROUTERS — MUST COME AFTER /match
+# ============================================================
+
 app.include_router(onboarding_router)
 app.include_router(sessions_router)
 app.include_router(operators_router)
+
 
 # -------------------------
 # LOGGING
@@ -759,52 +774,33 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
 # =========================================================
 # MANUAL MATCH MULTI TENANT SESSION AWARE
 # =========================================================
+import match_verse
+print(">>> ENTERED /match ROUTE <<<")
+
+
 @app.post("/match")
-def match_route(payload: Dict[str, Any], user=Depends(get_current_auth_user)):
-    sid = payload.get("session_id", "demo")
+def match_route(payload: Dict[str, Any]):
+    print(">>> ENTERED /match ROUTE <<<")
+    try:
+        sid = payload.get("session_id", "demo")
+        text = payload.get("text", "").strip()
+        s = get_session(sid)
 
-    # NEW: validate session belongs to this church and is active
-    get_valid_session(sid, user)
+        print("TEXT:", repr(text))
 
-    text = payload.get("text", "").strip()
-    s = get_session(sid)
+        r = match_text(text)
+        print("MATCH RESULT:", r)
 
-    debug_log("MATCH_ROUTE_TEXT:", repr(text))
-
-    if debounce(s, text):
-        debug_log("MATCH_ROUTE_RESULT: duplicate")
-        return {"status": "duplicate"}
-
-    r = match_text(text)
-    debug_log("MATCH_ROUTE_MATCH_TEXT_RESULT:", r)
-
-    if not r.get("best"):
-        debug_log("MATCH_ROUTE_RESULT: no_match")
-        return {"status": "no_match"}
-
-    if held(s, r["mode"]):
-        debug_log("MATCH_ROUTE_RESULT: held")
-        return {"status": "held"}
-
-    if DISPLAY_MODE == "assist" and not (
-        REFERENCE_AUTODISPLAY_IN_ASSIST
-        and r["mode"] in ("reference", "reference_range")
-    ):
-        if (
-            r["mode"] == "keyword"
-            and r["confidence"] < KEYWORD_MIN_CONFIDENCE_TO_SUGGEST
-        ):
-            debug_log("MATCH_ROUTE_RESULT: no_match(keyword low confidence)")
+        if not r.get("best"):
             return {"status": "no_match"}
-        s["pending"] = r
-        debug_log("MATCH_ROUTE_RESULT: pending")
-        return {"status": "pending", "result": r}
 
-    s["current"] = r
-    s["current_at"] = time.time()
-    s["pending"] = None
-    debug_log("MATCH_ROUTE_RESULT: displayed")
-    return {"status": "displayed", "result": r}
+        s["current"] = r
+        return {"status": "displayed", "result": r}
+
+    except Exception as e:
+        print("ERROR IN /match:", e)
+        return {"status": "error", "detail": str(e)}
+
 
 
 # =========================================================
@@ -837,10 +833,7 @@ def ingest(payload: Dict[str, Any]):
 # =========================================================
 
 @app.post("/approve/{sid}")
-def approve(sid: str, user=Depends(get_current_auth_user)):
-    # Validate session
-    get_valid_session(sid, user)
-
+def approve(sid: str):
     s = get_session(sid)
     if not s["pending"]:
         return {"status": "no_pending"}
@@ -854,31 +847,21 @@ def approve(sid: str, user=Depends(get_current_auth_user)):
 
 
 @app.post("/clear_pending/{sid}")
-def clear_pending(sid: str, user=Depends(get_current_auth_user)):
-    # Validate session
-    get_valid_session(sid, user)
-
+def clear_pending(sid: str):
     s = get_session(sid)
     s["pending"] = None
     return {"status": "cleared_pending"}
 
 
 @app.post("/clear_all/{sid}")
-def clear_all(sid: str, user=Depends(get_current_auth_user)):
-    # Validate session
-    get_valid_session(sid, user)
-
+def clear_all(sid: str):
     SESSIONS[sid] = new_session()
     return {"status": "cleared_all"}
 
 
 @app.get("/current/{sid}")
-def get_current_state(sid: str, user=Depends(get_current_auth_user)):
-    # Validate session
-    get_valid_session(sid, user)
-
+def get_current_state(sid: str):
     s = get_session(sid)
-
     return {
         "status": s.get("status", "idle"),
         "pending": s.get("pending"),
@@ -894,15 +877,12 @@ def control_root():
 
 
 @app.get("/control/{sid}", response_class=HTMLResponse)
-def control(sid: str, user=Depends(get_current_auth_user)):
-    get_valid_session(sid, user)
-
+def control(sid: str):
     return f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 body {{
@@ -970,6 +950,17 @@ button.danger {{
   font-size: 14px;
   color: #555;
 }}
+
+/* ⭐ Restored original status box styling */
+pre {{
+  background: #1e1e1e;
+  color: #0f0;
+  padding: 18px;
+  border-radius: 6px;
+  margin-top: 10px;
+  white-space: pre-wrap;
+  font-size: 14px;
+}}
 </style>
 </head>
 
@@ -1010,23 +1001,12 @@ button.danger {{
 </div>
 
 <script>
-const supabase = window.supabase.createClient(
-  "https://jrgauouvwrqcmyqmwbrh.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q"
-);
-
-async function authHeaders() {{
-  const {{ data }} = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return {{
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json"
-  }};
-}}
-
+// ------------------------------
+// REFRESH PANEL
+// ------------------------------
 async function refresh() {{
   let r = await fetch('/current/{sid}', {{
-    headers: await authHeaders()
+    headers: {{ "Content-Type": "application/json" }}
   }});
   let s = await r.json();
   let p = s.pending;
@@ -1048,10 +1028,13 @@ function setStatusFromResponse(j) {{
     JSON.stringify({{ status: j.status }}, null, 2);
 }}
 
+// ------------------------------
+// MATCH
+// ------------------------------
 async function match() {{
   let r = await fetch('/match', {{
     method:'POST',
-    headers: await authHeaders(),
+    headers: {{ "Content-Type": "application/json" }},
     body: JSON.stringify({{
       session_id:'{sid}',
       text:document.getElementById('t').value
@@ -1062,10 +1045,13 @@ async function match() {{
   await refresh();
 }}
 
+// ------------------------------
+// APPROVE / CLEAR
+// ------------------------------
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
     method:'POST',
-    headers: await authHeaders()
+    headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
   setStatusFromResponse(j);
@@ -1075,7 +1061,7 @@ async function approve() {{
 async function clearPending() {{
   let r = await fetch('/clear_pending/{sid}', {{
     method:'POST',
-    headers: await authHeaders()
+    headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
   setStatusFromResponse(j);
@@ -1085,7 +1071,7 @@ async function clearPending() {{
 async function clearAll() {{
   let r = await fetch('/clear_all/{sid}', {{
     method:'POST',
-    headers: await authHeaders()
+    headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
   setStatusFromResponse(j);
@@ -1109,16 +1095,18 @@ def presenter_root():
     return RedirectResponse("/presenter/demo")
 
 
-@app.get("/presenter/{sid}", response_class=HTMLResponse)
-def presenter(sid: str, user=Depends(get_current_auth_user)):
-    get_valid_session(sid, user)
+@app.get("/presenter")
+def presenter_root():
+    return RedirectResponse("/presenter/demo")
 
+
+@app.get("/presenter/{sid}", response_class=HTMLResponse)
+def presenter(sid: str):
     return f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 body {{
@@ -1176,19 +1164,10 @@ body {{
 </div>
 
 <script>
-const supabase = window.supabase.createClient(
-  "https://jrgauouvwrqcmyqmwbrh.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q"
-);
 
-async function authHeaders() {{
-  const {{ data }} = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return {{
-    Authorization: `Bearer ${token}`
-  }};
-}}
-
+// ------------------------------
+// RENDER PASSAGE
+// ------------------------------
 function renderPassage(rawText) {{
   const container = document.getElementById('text');
   if (!rawText) {{
@@ -1218,10 +1197,13 @@ function renderPassage(rawText) {{
   container.innerHTML = htmlLines.join("\\n");
 }}
 
+// ------------------------------
+// REFRESH LOOP
+// ------------------------------
 async function refresh() {{
   try {{
     const r = await fetch('/current/{sid}', {{
-      headers: await authHeaders()
+      headers: {{ "Content-Type": "application/json" }}
     }});
     const j = await r.json();
 
@@ -1242,6 +1224,7 @@ async function refresh() {{
 
 refresh();
 setInterval(refresh, 700);
+
 </script>
 
 </body>

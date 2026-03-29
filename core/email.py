@@ -1,5 +1,3 @@
-print("LOADING EMAIL MODULE FROM:", __file__)
-
 import os
 import resend
 

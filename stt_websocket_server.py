@@ -1,3 +1,5 @@
+print("LOADING STT SERVER...")
+
 import os
 import json
 import asyncio

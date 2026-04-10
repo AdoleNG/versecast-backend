@@ -97,8 +97,12 @@ async def stt_stream(ws: WebSocket):
     try:
         msg = await ws.receive_json()
     except Exception:
-        await ws.close()
+        try: 
+            await ws.close()
+        except:
+            pass
         return
+
 
     if msg.get("type") != "start":
         await ws.close()

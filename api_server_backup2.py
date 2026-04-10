@@ -1,5 +1,3 @@
-print(">>> LOADING API_SERVER FROM:", __file__)
-
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
@@ -540,16 +538,16 @@ app.add_middleware(
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    print(">>> ENTERED /match ROUTE <<<")
+    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-        print("TEXT:", repr(text))
+       # print("TEXT:", repr(text))
 
         r = match_text(text)
-        print("MATCH RESULT:", r)
+        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
@@ -775,21 +773,19 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
 # MANUAL MATCH MULTI TENANT SESSION AWARE
 # =========================================================
 import match_verse
-print(">>> ENTERED /match ROUTE <<<")
-
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    print(">>> ENTERED /match ROUTE <<<")
+    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-        print("TEXT:", repr(text))
+       # print("TEXT:", repr(text))
 
         r = match_text(text)
-        print("MATCH RESULT:", r)
+        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
@@ -798,7 +794,7 @@ def match_route(payload: Dict[str, Any]):
         return {"status": "displayed", "result": r}
 
     except Exception as e:
-        print("ERROR IN /match:", e)
+        #print("ERROR IN /match:", e)
         return {"status": "error", "detail": str(e)}
 
 
@@ -878,11 +874,17 @@ def control_root():
 
 @app.get("/control/{sid}", response_class=HTMLResponse)
 def control(sid: str):
+    short_sid = "…" + sid[-12:]  # last 12 chars, prefixed with ellipsis
     return f"""
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
+...
+</head>
+<body>
+<div class="panel">
+  <h1>VerseCast Control Panel (session: {short_sid})</h1>
+
 
 <style>
 body {{
@@ -965,9 +967,7 @@ pre {{
 </head>
 
 <body>
-<div class="panel">
-  <h1>VerseCast Control Panel (session: {sid})</h1>
-
+  
   <div style="margin-top: 10px; margin-bottom: 20px;">
     <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
       Open Presenter

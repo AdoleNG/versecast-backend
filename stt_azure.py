@@ -1,10 +1,11 @@
 # ======================================================
-# AZURE STT WORKER — OPTIONAL, TALKS TO api_server.py
+# AZURE STT WORKER — RUNS DURING ACTIVE SESSION
 # ======================================================
 
 import os
 import time
 import threading
+import json
 from typing import List, Optional, Tuple
 
 import requests
@@ -17,10 +18,6 @@ import azure.cognitiveservices.speech as speechsdk
 API_BASE = "http://127.0.0.1:8000"
 INGEST_URL = f"{API_BASE}/ingest"
 MATCH_URL = f"{API_BASE}/match"
-
-# Temporary for testing.
-# Replace with a fresh Supabase access token for the signed-in user.
-SUPABASE_TOKEN = "eyJhbGciOiJFUzI1NiIsImtpZCI6ImY2ODY4MTMxLTMwYmItNDdiZS1hODkxLWU3NzgwZWY3NDIyZCIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2pyZ2F1b3V2d3JxY215cW13YnJoLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNzQ4NmE5NC0zOGJhLTQ1NDUtOTE2My1mM2U2Yzc5NDQ0NDkiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzczODA0MTgzLCJpYXQiOjE3NzM4MDA1ODMsImVtYWlsIjoiYW1laHZpY3RvcjQ4NUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc3MzgwMDU4M31dLCJzZXNzaW9uX2lkIjoiMGU5Y2U1MDctMzQzOC00ZDk2LWE3OWMtYjBlNDQyY2MxMDFkIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.bu1O0qnpVbvL-lGjE8oRgobPGNnMdLhS_j5RLxN35PNs69FhApH4qP2IRCUbsGG3BImdtb7_UNyWqA5JTSS7pQ"
 
 LANGUAGE = "en-US"
 
@@ -39,27 +36,33 @@ AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION") or SPEECH_REGION_FALLBACK
 
 AZURE_MIC_DEVICE = (os.getenv("AZURE_MIC_DEVICE") or "").strip()
 
+# =========================================================
+# LOAD SESSION INFO (TOKEN + SESSION_ID) FROM FILE
+# =========================================================
 
-def fetch_session_id(token: str) -> Optional[str]:
+SESSION_INFO_PATH = "session_info.json"
+
+def load_session_info() -> tuple[str, str]:
     try:
-        r = requests.get(
-            f"{API_BASE}/saas/session/current",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=5,
+        with open(SESSION_INFO_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        token = data.get("token") or ""
+        session_id = data.get("session_id") or ""
+        if not token or not session_id:
+            raise RuntimeError("session_info.json missing token or session_id.")
+        return token, session_id
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"{SESSION_INFO_PATH} not found. Start a session from the app first."
         )
-        if r.ok:
-            data = r.json()
-            return data.get("id")
-    except Exception:
-        pass
-    return None
+    except Exception as e:
+        raise RuntimeError(f"Failed to load {SESSION_INFO_PATH}: {e}")
 
+SUPABASE_TOKEN, SESSION_ID = load_session_info()
 
-# Resolve the active live session at startup
-SESSION_ID = fetch_session_id(SUPABASE_TOKEN)
-
-if not SESSION_ID:
-    raise RuntimeError("No active session found. Start a service first.")
+# =========================================================
+# HELPERS
+# =========================================================
 
 def stt_normalize_text(s: str) -> str:
     s = (s or "").strip()
@@ -96,6 +99,7 @@ DEBUG = False
 def dprint(*args, **kwargs):
     if DEBUG:
         print(*args, **kwargs)
+
 
 def post_match(text: str) -> str:
     text = stt_normalize_text(text)
@@ -166,16 +170,16 @@ def pick_best_mic_device(preferred: str = "") -> Tuple[Optional[str], str]:
     return None, "no_device_list_use_default"
 
 
+# =========================================================
+# MAIN STT LOOP
+# =========================================================
+
 def run_stt_background() -> None:
     if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
         print("[STT] ERROR: Azure credentials not set.")
-        print("Set environment variables (recommended):")
+        print("Set environment variables:")
         print("  AZURE_SPEECH_KEY")
-        print("  AZURE_SPEECH_REGION   (e.g. canadaeast)")
-        print("\nPowerShell:")
-        print('  setx AZURE_SPEECH_KEY "YOUR_KEY_HERE"')
-        print('  setx AZURE_SPEECH_REGION "canadaeast"')
-        print("Then CLOSE and reopen PowerShell.")
+        print("  AZURE_SPEECH_REGION")
         return
 
     print("[STT] Initializing Azure Speech...")
@@ -366,10 +370,8 @@ def run_stt_background() -> None:
                     print("\n[STT] Too many rapid restarts.")
                     print("[STT] Likely causes on Windows:")
                     print("  - Another app has the mic in Exclusive Mode")
-                    print("  - Wrong input device / driver path (try setting AZURE_MIC_DEVICE)")
-                    print("  - Audio enhancements/driver quirks (try disabling enhancements)")
-                    print("\n[STT] Tip: set AZURE_MIC_DEVICE to your mic name exactly, e.g.:")
-                    print('  setx AZURE_MIC_DEVICE "Microphone Array (Realtek High Definition Audio)"')
+                    print("  - Wrong input device / driver path")
+                    print("  - Audio enhancements/driver quirks")
                     print("\n[STT] Exiting to avoid a restart loop.")
                     break
 

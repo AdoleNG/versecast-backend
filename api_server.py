@@ -1,5 +1,3 @@
-print(">>> LOADING API_SERVER FROM:", __file__)
-
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
@@ -9,6 +7,7 @@ import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from routers.onboarding import router as onboarding_router
 from routers.sessions import router as sessions_router
@@ -514,6 +513,7 @@ def held(session, mode):
 # ============================================================
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ------------------------------
 # CORS CONFIGURATION
@@ -540,16 +540,16 @@ app.add_middleware(
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    print(">>> ENTERED /match ROUTE <<<")
+    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-        print("TEXT:", repr(text))
+       # print("TEXT:", repr(text))
 
         r = match_text(text)
-        print("MATCH RESULT:", r)
+        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
@@ -775,21 +775,19 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
 # MANUAL MATCH MULTI TENANT SESSION AWARE
 # =========================================================
 import match_verse
-print(">>> ENTERED /match ROUTE <<<")
-
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    print(">>> ENTERED /match ROUTE <<<")
+    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-        print("TEXT:", repr(text))
+       # print("TEXT:", repr(text))
 
         r = match_text(text)
-        print("MATCH RESULT:", r)
+        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
@@ -798,7 +796,7 @@ def match_route(payload: Dict[str, Any]):
         return {"status": "displayed", "result": r}
 
     except Exception as e:
-        print("ERROR IN /match:", e)
+        #print("ERROR IN /match:", e)
         return {"status": "error", "detail": str(e)}
 
 
@@ -870,56 +868,61 @@ def get_current_state(sid: str):
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)
 # =========================================================
-
-@app.get("/control")
-def control_root():
-    return RedirectResponse("/control/demo")
-
-
 @app.get("/control/{sid}", response_class=HTMLResponse)
 def control(sid: str):
-    return f"""
+    short_sid = "…" + sid[-12:]
+
+    # ================================================================
+    # HTML START
+    # ================================================================
+    html = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8" />
+<title>VerseCast Control Panel</title>
+"""
 
+    # ================================================================
+    # CSS STYLES
+    # ================================================================
+    html += """
 <style>
-body {{
+body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f5f5f5;
   padding: 30px;
-}}
-.panel {{
-    background: #ffffff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    max-width: 1000px;
-    margin: 40px auto;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.08);
-    border: 1px solid #f0f0f0;
-}}
-h1 {{
+}
+.panel {
+  background: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  max-width: 1000px;
+  margin: 40px auto;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
+}
+h1 {
   margin-top: 0;
   font-size: 30px;
   font-weight: 800;
-}}
-.section-title {{
+}
+.section-title {
   margin-top: 30px;
   margin-bottom: 10px;
   font-size: 20px;
   font-weight: 700;
-}}
-.input-row {{
+}
+.input-row {
   display: flex;
   gap: 10px;
-}}
-.input-row input {{
+}
+.input-row input {
   flex: 1;
   padding: 10px;
   font-size: 16px;
-}}
-button {{
+}
+button {
   padding: 10px 18px;
   font-size: 15px;
   border-radius: 6px;
@@ -927,32 +930,30 @@ button {{
   border: none;
   background: #2563eb;
   color: white;
-}}
-button.danger {{
+}
+button.danger {
   background: #dc2626;
-}}
-.pending-box {{
+}
+.pending-box {
   background: #fef3c7;
   padding: 15px;
   border-radius: 8px;
   border: 1px solid #fcd34d;
-}}
-.pending-header {{
+}
+.pending-header {
   font-weight: bold;
   margin-bottom: 8px;
-}}
-.verse-box {{
+}
+.verse-box {
   white-space: pre-wrap;
   font-size: 18px;
   margin-bottom: 8px;
-}}
-.pending-meta {{
+}
+.pending-meta {
   font-size: 14px;
   color: #555;
-}}
-
-/* ⭐ Restored original status box styling */
-pre {{
+}
+pre {
   background: #1e1e1e;
   color: #0f0;
   padding: 18px;
@@ -960,50 +961,164 @@ pre {{
   margin-top: 10px;
   white-space: pre-wrap;
   font-size: 14px;
-}}
+}
 </style>
+"""
+
+    # ================================================================
+    # BODY START
+    # ================================================================
+    html += f"""
 </head>
-
 <body>
+
 <div class="panel">
-  <h1>VerseCast Control Panel (session: {sid})</h1>
+<h1>VerseCast Control Panel (session: {short_sid})</h1>
+"""
 
-  <div style="margin-top: 10px; margin-bottom: 20px;">
-    <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
-      Open Presenter
-    </button>
+    # ================================================================
+    # HEADER + PRESENTER BUTTON
+    # ================================================================
+    html += f"""
+<div style="margin-top: 10px; margin-bottom: 20px;">
+  <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
+    Open Presenter
+  </button>
+"""
+
+    # ================================================================
+    # STT BUTTONS
+    # ================================================================
+    html += """
+  <div style="margin-top: 20px; margin-bottom: 20px;">
+    <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
+    <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
   </div>
-
-  <div class="section-title">Enter Reference or Phrase</div>
-  <div class="input-row">
-    <input id="t" value=""/>
-    <button onclick="match()">Match</button>
-  </div>
-
-  <div class="section-title">Pending (Best)</div>
-  <div id="pending_box" class="pending-box" style="display:none;">
-    <div class="pending-header" id="pending_ref"></div>
-    <div class="verse-box" id="pending_text"></div>
-    <div class="pending-meta">
-      Mode: <span id="pending_mode"></span>
-      &nbsp;|&nbsp;
-      Confidence: <span id="pending_conf"></span>
-    </div>
-    <div style="margin-top:12px;">
-      <button onclick="approve()">Approve / Display</button>
-      <button class="danger" onclick="clearPending()">Clear Pending</button>
-      <button class="danger" onclick="clearAll()">Clear All</button>
-    </div>
-  </div>
-
-  <div class="section-title">Status</div>
-  <pre id="status_box">{{ "status": "idle" }}</pre>
 </div>
+"""
 
+    # ================================================================
+    # MANUAL MATCH INPUT
+    # ================================================================
+    html += """
+<div class="section-title">Enter Reference or Phrase</div>
+<div class="input-row">
+  <input id="t" value=""/>
+  <button onclick="match()">Match</button>
+</div>
+"""
+
+    # ================================================================
+    # PENDING BEST MATCH
+    # ================================================================
+    html += """
+<div class="section-title">Pending (Best)</div>
+<div id="pending_box" class="pending-box" style="display:none;">
+  <div class="pending-header" id="pending_ref"></div>
+  <div class="verse-box" id="pending_text"></div>
+  <div class="pending-meta">
+    Mode: <span id="pending_mode"></span>
+    &nbsp;|&nbsp;
+    Confidence: <span id="pending_conf"></span>
+  </div>
+
+  <div style="margin-top:12px;">
+    <button onclick="approve()">Approve / Display</button>
+    <button class="danger" onclick="clearPending()">Clear Pending</button>
+    <button class="danger" onclick="clearAll()">Clear All</button>
+  </div>
+</div>
+"""
+
+    # ================================================================
+    # STATUS BOX
+    # ================================================================
+    html += """
+<div class="section-title">Status</div>
+<pre id="status_box">{ "status": "idle" }</pre>
+
+</div> <!-- END PANEL -->
+"""
+
+    # ================================================================
+    # STT BACKGROUND ENGINE
+    # ================================================================
+    html += f"""
 <script>
-// ------------------------------
-// REFRESH PANEL
-// ------------------------------
+let audioContext = null;
+let workletNode = null;
+let mediaStream = null;
+let ws = null;
+
+async function enableSTT() {{
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  const sessionId = "{sid}";
+
+  if (!token) {{
+    alert("Missing token. Please start session from dashboard.");
+    return;
+  }}
+
+  ws = new WebSocket(`wss://api.versecast.ca/stt/stream?token=${{token}}&session_id=${{sessionId}}`);
+  ws.binaryType = "arraybuffer";
+
+  ws.onopen = () => {{
+    console.log("STT WebSocket connected");
+    ws.send(JSON.stringify({{ type: "start" }}));
+  }};
+
+  ws.onclose = () => {{
+    console.log("STT WebSocket closed");
+  }};
+
+  mediaStream = await navigator.mediaDevices.getUserMedia({{ audio: true }});
+  audioContext = new AudioContext({{ sampleRate: 48000 }});
+
+  await audioContext.audioWorklet.addModule("/static/audio-worklet-processor.js");
+
+  const source = audioContext.createMediaStreamSource(mediaStream);
+  workletNode = new AudioWorkletNode(audioContext, "versecast-processor");
+
+  workletNode.port.onmessage = (event) => {{
+    if (ws && ws.readyState === WebSocket.OPEN) {{
+      ws.send(event.data);
+    }}
+  }};
+
+  source.connect(workletNode);
+  workletNode.connect(audioContext.destination);
+
+  document.getElementById("enable_stt_btn").style.display = "none";
+  document.getElementById("disable_stt_btn").style.display = "inline-block";
+}}
+
+function disableSTT() {{
+  try {{ ws?.send(JSON.stringify({{ type: "stop" }})); }} catch {{}}
+  try {{ ws?.close(); }} catch {{}}
+  try {{ workletNode?.disconnect(); }} catch {{}}
+  try {{ audioContext?.close(); }} catch {{}}
+  try {{ mediaStream?.getTracks().forEach(t => t.stop()); }} catch {{}}
+
+  ws = null;
+  audioContext = null;
+  workletNode = null;
+  mediaStream = null;
+
+  document.getElementById("enable_stt_btn").style.display = "inline-block";
+  document.getElementById("disable_stt_btn").style.display = "none";
+}}
+
+document.getElementById("enable_stt_btn").onclick = enableSTT;
+document.getElementById("disable_stt_btn").onclick = disableSTT;
+</script>
+"""
+
+    # ================================================================
+    # REFRESH PANEL
+    # ================================================================
+    html += f"""
+<script>
 async function refresh() {{
   let r = await fetch('/current/{sid}', {{
     headers: {{ "Content-Type": "application/json" }}
@@ -1027,10 +1142,14 @@ function setStatusFromResponse(j) {{
   document.getElementById('status_box').textContent =
     JSON.stringify({{ status: j.status }}, null, 2);
 }}
+</script>
+"""
 
-// ------------------------------
-// MATCH
-// ------------------------------
+    # ================================================================
+    # MATCH
+    # ================================================================
+    html += f"""
+<script>
 async function match() {{
   let r = await fetch('/match', {{
     method:'POST',
@@ -1044,10 +1163,14 @@ async function match() {{
   setStatusFromResponse(j);
   await refresh();
 }}
+</script>
+"""
 
-// ------------------------------
-// APPROVE / CLEAR
-// ------------------------------
+    # ================================================================
+    # APPROVE / CLEAR
+    # ================================================================
+    html += f"""
+<script>
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
     method:'POST',
@@ -1081,10 +1204,17 @@ async function clearAll() {{
 refresh();
 setInterval(refresh, 1500);
 </script>
+"""
 
+    # ================================================================
+    # HTML END
+    # ================================================================
+    html += """
 </body>
 </html>
 """
+
+    return html
 
 # ================================================================
 # PRESENTER (redesigned, supports ranges + styling + auto font size)

@@ -1,4 +1,4 @@
-print("LOADING STT SERVER... VERSION B", flush=True)
+print("LOADING STT SERVER...", flush=True)
 
 import os
 import json
@@ -55,7 +55,7 @@ def normalize(s: str) -> str:
     return " ".join((s or "").strip().split())
 
 
-def post_ingest(session_id: str, text: str, is_final: bool):
+def post_ingest(session_id: str, text: str, is_final: bool) -> bool:
     payload = {
         "session_id": session_id,
         "text": normalize(text),
@@ -85,96 +85,82 @@ async def stt_stream(ws: WebSocket):
         - Sends partial + final transcripts to /ingest
     """
 
-    print("🔥 ENTERED /stt/stream HANDLER 🔥", flush=True)
-
     await ws.accept()
-    print("🔥 WS ROUTE HIT AFTER ACCEPT 🔥", flush=True)
 
     session_id: Optional[str] = None
     token: Optional[str] = None
 
     # =====================================================
-    # WAIT FOR START MESSAGE (DIAGNOSTIC VERSION)
+    # WAIT FOR START MESSAGE
     # =====================================================
-    print("🔥 WAITING FOR FIRST WS MESSAGE 🔥", flush=True)
-
     try:
         msg = await ws.receive()
-        print("[WS DEBUG] raw message received:", msg, flush=True)
-
     except Exception as e:
-        print("[WS ERROR] receive failed:", repr(e), flush=True)
+        print("[WS ERROR] Failed to receive first message:", repr(e), flush=True)
         try:
             await ws.close()
-        except Exception as close_error:
-            print("[WS ERROR] close after receive failure failed:", repr(close_error), flush=True)
+        except Exception:
+            pass
         return
 
-    # Ensure it's a receive event
     if msg.get("type") != "websocket.receive":
-        print("[WS DEBUG] unexpected message type:", msg.get("type"), flush=True)
+        print("[WS ERROR] Unexpected first WebSocket message type:", msg.get("type"), flush=True)
         try:
             await ws.close()
-        except Exception as close_error:
-            print("[WS ERROR] close after unexpected type failed:", repr(close_error), flush=True)
+        except Exception:
+            pass
         return
 
-    # Extract payload
     data = None
 
     if msg.get("text") is not None:
         try:
             data = json.loads(msg["text"])
-            print("[WS DEBUG] parsed JSON (text):", data, flush=True)
         except Exception as e:
-            print("[WS ERROR] failed to parse text JSON:", repr(e), flush=True)
+            print("[WS ERROR] Failed to parse start message as text JSON:", repr(e), flush=True)
             try:
                 await ws.close()
-            except Exception as close_error:
-                print("[WS ERROR] close after text parse failure failed:", repr(close_error), flush=True)
+            except Exception:
+                pass
             return
 
     elif msg.get("bytes") is not None:
         try:
             decoded = msg["bytes"].decode("utf-8")
             data = json.loads(decoded)
-            print("[WS DEBUG] parsed JSON (bytes):", data, flush=True)
         except Exception as e:
-            print("[WS ERROR] failed to parse bytes JSON:", repr(e), flush=True)
+            print("[WS ERROR] Failed to parse start message as bytes JSON:", repr(e), flush=True)
             try:
                 await ws.close()
-            except Exception as close_error:
-                print("[WS ERROR] close after bytes parse failure failed:", repr(close_error), flush=True)
+            except Exception:
+                pass
             return
 
     else:
-        print("[WS DEBUG] message had no text or bytes payload", flush=True)
+        print("[WS ERROR] First WebSocket message had no text or bytes payload.", flush=True)
         try:
             await ws.close()
-        except Exception as close_error:
-            print("[WS ERROR] close after empty payload failed:", repr(close_error), flush=True)
+        except Exception:
+            pass
         return
 
-    # =====================================================
-    # VALIDATE MESSAGE
-    # =====================================================
     if data.get("type") != "start":
-        print("[WS DEBUG] invalid message type:", data, flush=True)
+        print("[WS ERROR] First message was not a start message:", data, flush=True)
         try:
             await ws.close()
-        except Exception as close_error:
-            print("[WS ERROR] close after invalid message type failed:", repr(close_error), flush=True)
+        except Exception:
+            pass
         return
 
     token = data.get("token")
     session_id = data.get("session_id")
 
     if not token or not session_id:
-        print("[WS DEBUG] missing token or session_id:", data, flush=True)
+        print("[WS ERROR] Missing token or session_id in start message.", flush=True)
         try:
             await ws.close()
-        except Exception as close_error:
-            print("[WS ERROR] close after missing token/session_id failed:", repr(close_error), flush=True)
+        except Exception:
+            pass
         return
 
     print(f"[WS] STT session started for {session_id}", flush=True)
@@ -189,7 +175,6 @@ async def stt_stream(ws: WebSocket):
     )
     speech_config.speech_recognition_language = LANGUAGE
 
-    # Use push stream for raw PCM
     stream = speechsdk.audio.PushAudioInputStream()
     audio_config = speechsdk.audio.AudioConfig(stream=stream)
 
@@ -218,61 +203,59 @@ async def stt_stream(ws: WebSocket):
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)
 
-    # Start Azure recognition
-    recognizer.start_continuous_recognition_async().get()
-    print("🔥 AZURE RECOGNIZER STARTED 🔥", flush=True)
+    try:
+        recognizer.start_continuous_recognition_async().get()
+    except Exception as e:
+        print("[WS ERROR] Failed to start Azure recognizer:", repr(e), flush=True)
+        try:
+            await ws.close()
+        except Exception:
+            pass
+        return
 
     # =====================================================
-    # RECEIVE AUDIO FROM BROWSER
+    # RECEIVE AUDIO / CONTROL MESSAGES
     # =====================================================
     try:
         while True:
             msg = await ws.receive()
-            print("[WS DEBUG] loop message:", msg.get("type"), flush=True)
 
             if msg["type"] == "websocket.disconnect":
-                print("🔥 WEBSOCKET DISCONNECT RECEIVED 🔥", flush=True)
                 break
 
-            elif msg["type"] == "websocket.receive":
+            if msg["type"] == "websocket.receive":
                 if msg.get("bytes") is not None:
-                    print(f"[WS DEBUG] received audio chunk: {len(msg['bytes'])} bytes", flush=True)
                     stream.write(msg["bytes"])
 
                 elif msg.get("text") is not None:
-                    print("[WS DEBUG] received text control message:", msg["text"], flush=True)
                     try:
                         data = json.loads(msg["text"])
                         if data.get("type") == "stop":
-                            print("🔥 STOP MESSAGE RECEIVED 🔥", flush=True)
                             break
                     except Exception as e:
-                        print("[WS ERROR] failed to parse loop text control message:", repr(e), flush=True)
+                        print("[WS ERROR] Failed to parse text control message:", repr(e), flush=True)
 
     except WebSocketDisconnect:
-        print("🔥 WebSocketDisconnect exception caught 🔥", flush=True)
+        pass
     except Exception as e:
-        print("[WS] Error:", repr(e), flush=True)
+        print("[WS ERROR] WebSocket loop error:", repr(e), flush=True)
 
     # =====================================================
     # CLEANUP
     # =====================================================
     try:
         recognizer.stop_continuous_recognition_async().get()
-        print("🔥 AZURE RECOGNIZER STOPPED 🔥", flush=True)
     except Exception as e:
-        print("[WS ERROR] stopping recognizer failed:", repr(e), flush=True)
+        print("[WS ERROR] Failed to stop Azure recognizer:", repr(e), flush=True)
 
     try:
         stream.close()
-        print("🔥 AUDIO STREAM CLOSED 🔥", flush=True)
     except Exception as e:
-        print("[WS ERROR] closing stream failed:", repr(e), flush=True)
+        print("[WS ERROR] Failed to close audio stream:", repr(e), flush=True)
 
     print(f"[WS] STT session ended for {session_id}", flush=True)
 
     try:
         await ws.close()
-        print("🔥 WEBSOCKET CLOSED CLEANLY 🔥", flush=True)
-    except Exception as e:
-        print("[WS ERROR] final ws.close() failed:", repr(e), flush=True)
+    except Exception:
+        pass

@@ -1040,10 +1040,10 @@ pre {
 </div> <!-- END PANEL -->
 """
 
-# ================================================================
-# STT BACKGROUND ENGINE
-# ================================================================
-html += f"""
+    # ================================================================
+    # STT BACKGROUND ENGINE
+    # ================================================================
+    html += f"""
 <script>
 let audioContext = null;
 let workletNode = null;
@@ -1156,11 +1156,11 @@ function setStatusFromResponse(j) {{
 <script>
 async function match() {{
   let r = await fetch('/match', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }},
     body: JSON.stringify({{
-      session_id:'{sid}',
-      text:document.getElementById('t').value
+      session_id: '{sid}',
+      text: document.getElementById('t').value
     }})
   }});
   let j = await r.json();
@@ -1177,7 +1177,7 @@ async function match() {{
 <script>
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
@@ -1187,7 +1187,7 @@ async function approve() {{
 
 async function clearPending() {{
   let r = await fetch('/clear_pending/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
@@ -1197,7 +1197,7 @@ async function clearPending() {{
 
 async function clearAll() {{
   let r = await fetch('/clear_all/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();

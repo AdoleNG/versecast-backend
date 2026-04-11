@@ -764,36 +764,6 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
     return RedirectResponse(url=f"/presenter/{sid}", status_code=307)
 
 # =========================================================
-# MANUAL MATCH MULTI TENANT SESSION AWARE
-# =========================================================
-import match_verse
-
-@app.post("/match")
-def match_route(payload: Dict[str, Any]):
-    
-    try:
-        sid = payload.get("session_id", "demo")
-        text = payload.get("text", "").strip()
-        s = get_session(sid)
-
-       # print("TEXT:", repr(text))
-
-        r = match_text(text)
-        #print("MATCH RESULT:", r)
-
-        if not r.get("best"):
-            return {"status": "no_match"}
-
-        s["current"] = r
-        return {"status": "displayed", "result": r}
-
-    except Exception as e:
-        #print("ERROR IN /match:", e)
-        return {"status": "error", "detail": str(e)}
-
-
-
-# =========================================================
 # INGEST (for STT OR any external client)
 # =========================================================
 

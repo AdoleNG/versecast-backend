@@ -2,7 +2,6 @@ print("LOADING STT SERVER...", flush=True)
 
 import os
 import json
-import httpx
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -64,25 +63,32 @@ def post_ingest(session_id: str, text: str, is_final: bool) -> bool:
     }
     try:
         r = requests.post(INGEST_URL, json=payload, timeout=HTTP_TIMEOUT)
+        print(
+            "[INGEST]",
+            "FINAL" if is_final else "PARTIAL",
+            r.status_code,
+            r.text,
+            flush=True,
+        )
         return r.ok
-    except Exception:
+    except Exception as e:
+        print("[INGEST ERROR]", repr(e), flush=True)
         return False
 
-async def post_match(session_id: str, text: str):
-    """
-    Send FINAL transcript to VerseCast /match endpoint.
-    """
+
+def post_match(session_id: str, text: str) -> bool:
     payload = {
         "session_id": session_id,
-        "text": text
+        "text": text,
     }
-
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(MATCH_URL, json=payload)
-            print("[MATCH] POST /match:", resp.status_code, resp.text, flush=True)
+        r = requests.post(MATCH_URL, json=payload, timeout=HTTP_TIMEOUT)
+        print("[MATCH] POST /match:", r.status_code, r.text, flush=True)
+        return r.ok
     except Exception as e:
         print("[MATCH ERROR]", repr(e), flush=True)
+        return False
+
 
 # =========================================================
 # MAIN WEBSOCKET ENDPOINT
@@ -214,13 +220,12 @@ async def stt_stream(ws: WebSocket):
             text = normalize(evt.result.text)
             if text:
                 print(f"[FINAL] {text}", flush=True)
-                
+
                 # Send to /ingest (existing behavior)
                 post_ingest(session_id, text, is_final=True)
 
-                # NEW: Send FINAL transcript to /match
-                import asyncio
-                asyncio.create_task(post_match(session_id, text))
+                # Send FINAL transcript to /match
+                post_match(session_id, text)
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)

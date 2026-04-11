@@ -540,30 +540,22 @@ app.add_middleware(
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-       # print("TEXT:", repr(text))
-
         r = match_text(text)
-        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
 
-        # ⭐ DO NOT auto-display
-        # s["current"] = r   <-- REMOVE THIS
-
-        # ⭐ Store match in pending (correct behavior)
+        # Always store match in pending
         s["pending"] = r
 
         return {"status": "pending", "result": r}
 
     except Exception as e:
-        print("ERROR IN /match:", e)
         return {"status": "error", "detail": str(e)}
 
 # ============================================================

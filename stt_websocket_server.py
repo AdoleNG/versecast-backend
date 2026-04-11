@@ -2,6 +2,7 @@ print("LOADING STT SERVER...", flush=True)
 
 import os
 import json
+import httpx
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -67,6 +68,21 @@ def post_ingest(session_id: str, text: str, is_final: bool) -> bool:
     except Exception:
         return False
 
+async def post_match(session_id: str, text: str):
+    """
+    Send FINAL transcript to VerseCast /match endpoint.
+    """
+    payload = {
+        "session_id": session_id,
+        "text": text
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(MATCH_URL, json=payload)
+            print("[MATCH] POST /match:", resp.status_code, resp.text, flush=True)
+    except Exception as e:
+        print("[MATCH ERROR]", repr(e), flush=True)
 
 # =========================================================
 # MAIN WEBSOCKET ENDPOINT
@@ -198,7 +214,13 @@ async def stt_stream(ws: WebSocket):
             text = normalize(evt.result.text)
             if text:
                 print(f"[FINAL] {text}", flush=True)
+                
+                # Send to /ingest (existing behavior)
                 post_ingest(session_id, text, is_final=True)
+
+                # NEW: Send FINAL transcript to /match
+                import asyncio
+                asyncio.create_task(post_match(session_id, text))
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)

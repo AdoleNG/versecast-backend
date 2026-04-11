@@ -1040,10 +1040,10 @@ pre {
 </div> <!-- END PANEL -->
 """
 
-    # ================================================================
-    # STT BACKGROUND ENGINE
-    # ================================================================
-    html += f"""
+# ================================================================
+# STT BACKGROUND ENGINE
+# ================================================================
+html += f"""
 <script>
 let audioContext = null;
 let workletNode = null;
@@ -1065,7 +1065,11 @@ async function enableSTT() {{
 
   ws.onopen = () => {{
     console.log("STT WebSocket connected");
-    ws.send(JSON.stringify({{ type: "start" }}));
+    ws.send(JSON.stringify({{
+      type: "start",
+      token: token,
+      session_id: sessionId
+    }}));
   }};
 
   ws.onclose = () => {{

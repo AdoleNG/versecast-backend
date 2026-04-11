@@ -91,31 +91,73 @@ async def stt_stream(ws: WebSocket):
     session_id: Optional[str] = None
     token: Optional[str] = None
 
-    # =====================================================
-    # WAIT FOR START MESSAGE
-    # =====================================================
+ # =====================================================
+# WAIT FOR START MESSAGE (DIAGNOSTIC VERSION)
+# =====================================================
+import json
+
+try:
+    msg = await ws.receive()
+    print("[WS DEBUG] raw message received:", msg)
+
+except Exception as e:
+    print("[WS ERROR] receive failed:", e)
     try:
-        msg = await ws.receive_json()
-    except Exception:
-        try: 
-            await ws.close()
-        except:
-            pass
-        return
+        await ws.close()
+    except:
+        pass
+    return
 
+# Ensure it's a receive event
+if msg.get("type") != "websocket.receive":
+    print("[WS DEBUG] unexpected message type:", msg.get("type"))
+    await ws.close()
+    return
 
-    if msg.get("type") != "start":
+# Extract payload
+data = None
+
+if msg.get("text"):
+    try:
+        data = json.loads(msg["text"])
+        print("[WS DEBUG] parsed JSON (text):", data)
+    except Exception as e:
+        print("[WS ERROR] failed to parse text JSON:", e)
         await ws.close()
         return
 
-    token = msg.get("token")
-    session_id = msg.get("session_id")
-
-    if not token or not session_id:
+elif msg.get("bytes"):
+    try:
+        decoded = msg["bytes"].decode("utf-8")
+        data = json.loads(decoded)
+        print("[WS DEBUG] parsed JSON (bytes):", data)
+    except Exception as e:
+        print("[WS ERROR] failed to parse bytes JSON:", e)
         await ws.close()
         return
 
-    print(f"[WS] STT session started for {session_id}")
+else:
+    print("[WS DEBUG] message had no text or bytes payload")
+    await ws.close()
+    return
+
+# =====================================================
+# VALIDATE MESSAGE
+# =====================================================
+if data.get("type") != "start":
+    print("[WS DEBUG] invalid message type:", data)
+    await ws.close()
+    return
+
+token = data.get("token")
+session_id = data.get("session_id")
+
+if not token or not session_id:
+    print("[WS DEBUG] missing token or session_id:", data)
+    await ws.close()
+    return
+
+print(f"[WS] STT session started for {session_id}")
 
     # =====================================================
     # BUILD AZURE STREAMING PIPELINE

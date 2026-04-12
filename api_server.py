@@ -550,9 +550,21 @@ def match_route(payload: Dict[str, Any]):
         if not r.get("best"):
             return {"status": "no_match"}
 
-        # Always store match in pending
-        s["pending"] = r
+        mode = r.get("mode")
 
+        # -----------------------------------------
+        # AUTO‑APPROVE EXPLICIT REFERENCES
+        # -----------------------------------------
+        if mode in ("reference", "reference_range"):
+            s["current"] = r
+            s["current_at"] = time.time()
+            s["pending"] = None
+            return {"status": "displayed", "result": r}
+
+        # -----------------------------------------
+        # OTHERWISE → PENDING (normal behavior)
+        # -----------------------------------------
+        s["pending"] = r
         return {"status": "pending", "result": r}
 
     except Exception as e:

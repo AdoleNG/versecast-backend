@@ -894,7 +894,21 @@ def control(sid: str):
 <head>
 <meta charset="utf-8" />
 <title>VerseCast Control Panel</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
 """
+    ...
+    return HTMLResponse(html)
+
+# ================================================================
+# FAVICON ROUTE (must be outside control())
+# ================================================================
+from fastapi.responses import FileResponse
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("static/favicon.ico")
+
 
     # ================================================================
     # CSS STYLES

@@ -718,6 +718,45 @@ def saas_start_session(auth_user=Depends(get_current_auth_user)):
 
     return session
 
+@app.post("/saas/session/end")
+def saas_end_session(auth_user=Depends(get_current_auth_user)):
+    """
+    End the current active service session for the authenticated user's church.
+    """
+    church_id = get_user_church_id(auth_user.id)
+    if not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not linked to a church.",
+        )
+
+    # Find the active session
+    supabase = get_admin_supabase()
+    res = (
+        supabase.table("service_sessions")
+        .select("id, ended_at")
+        .eq("church_id", church_id)
+        .is_("ended_at", None)
+        .single()
+        .execute()
+    )
+
+    session = res.data
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session to end.",
+        )
+
+    # Mark it ended
+    update_res = (
+        supabase.table("service_sessions")
+        .update({"ended_at": datetime.utcnow().isoformat() + "Z"})
+        .eq("id", session["id"])
+        .execute()
+    )
+
+    return {"status": "ended", "session_id": session["id"]}
 
 @app.get("/saas/session/history")
 def saas_session_history(auth_user=Depends(get_current_auth_user)):

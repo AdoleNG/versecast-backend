@@ -895,20 +895,7 @@ def control(sid: str):
 <meta charset="utf-8" />
 <title>VerseCast Control Panel</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-
 """
-    ...
-    return HTMLResponse(html)
-
-# ================================================================
-# FAVICON ROUTE (must be outside control())
-# ================================================================
-from fastapi.responses import FileResponse
-
-@app.get("/favicon.ico")
-def favicon():
-    return FileResponse("static/favicon.ico")
-
 
     # ================================================================
     # CSS STYLES
@@ -1245,17 +1232,22 @@ setInterval(refresh, 1500);
 </html>
 """
 
-    return html
+    return HTMLResponse(html)
+
+
+# ================================================================
+# FAVICON ROUTE (must be outside control())
+# ================================================================
+from fastapi.responses import FileResponse
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("static/favicon.ico")
+
 
 # ================================================================
 # PRESENTER (redesigned, supports ranges + styling + auto font size)
 # ================================================================
-
-@app.get("/presenter")
-def presenter_root():
-    return RedirectResponse("/presenter/demo")
-
-
 @app.get("/presenter")
 def presenter_root():
     return RedirectResponse("/presenter/demo")
@@ -1326,9 +1318,6 @@ body {{
 
 <script>
 
-// ------------------------------
-// RENDER PASSAGE
-// ------------------------------
 function renderPassage(rawText) {{
   const container = document.getElementById('text');
   if (!rawText) {{
@@ -1358,9 +1347,6 @@ function renderPassage(rawText) {{
   container.innerHTML = htmlLines.join("\\n");
 }}
 
-// ------------------------------
-// REFRESH LOOP
-// ------------------------------
 async function refresh() {{
   try {{
     const r = await fetch('/current/{sid}', {{

@@ -1319,10 +1319,25 @@ body {{
   font-size: 14px;
   color: #ddd;
 }}
+#versecast-tagline {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 1.2rem;
+  color: #f5f5f5;
+  opacity: 0.8;
+  text-align: right;
+  pointer-events: none;
+}
+
 </style>
 </head>
 
 <body>
+<div id="versecast-tagline">
+  Thy word is a lamp unto my feet, and a light unto my path. (Psalm 119:105)
+</div>
+
 <div class="wrapper">
   <div id="ref" class="reference">Waiting...</div>
   <div class="passage-container">

@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from routers.onboarding import router as onboarding_router
 from routers.sessions import router as sessions_router
@@ -512,6 +513,7 @@ def held(session, mode):
 # ============================================================
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ------------------------------
 # CORS CONFIGURATION
@@ -538,30 +540,34 @@ app.add_middleware(
 
 @app.post("/match")
 def match_route(payload: Dict[str, Any]):
-    
     try:
         sid = payload.get("session_id", "demo")
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
-       # print("TEXT:", repr(text))
-
         r = match_text(text)
-        #print("MATCH RESULT:", r)
 
         if not r.get("best"):
             return {"status": "no_match"}
 
-        # ⭐ DO NOT auto-display
-        # s["current"] = r   <-- REMOVE THIS
+        mode = r.get("mode")
 
-        # ⭐ Store match in pending (correct behavior)
+        # -----------------------------------------
+        # AUTO‑APPROVE EXPLICIT REFERENCES
+        # -----------------------------------------
+        if mode in ("reference", "reference_range"):
+            s["current"] = r
+            s["current_at"] = time.time()
+            s["pending"] = None
+            return {"status": "displayed", "result": r}
+
+        # -----------------------------------------
+        # OTHERWISE → PENDING (normal behavior)
+        # -----------------------------------------
         s["pending"] = r
-
         return {"status": "pending", "result": r}
 
     except Exception as e:
-        print("ERROR IN /match:", e)
         return {"status": "error", "detail": str(e)}
 
 # ============================================================
@@ -712,6 +718,45 @@ def saas_start_session(auth_user=Depends(get_current_auth_user)):
 
     return session
 
+@app.post("/saas/session/end")
+def saas_end_session(auth_user=Depends(get_current_auth_user)):
+    """
+    End the current active service session for the authenticated user's church.
+    """
+    church_id = get_user_church_id(auth_user.id)
+    if not church_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not linked to a church.",
+        )
+
+    # Find the active session
+    supabase = get_admin_supabase()
+    res = (
+        supabase.table("service_sessions")
+        .select("id, ended_at")
+        .eq("church_id", church_id)
+        .is_("ended_at", None)
+        .single()
+        .execute()
+    )
+
+    session = res.data
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session to end.",
+        )
+
+    # Mark it ended
+    update_res = (
+        supabase.table("service_sessions")
+        .update({"ended_at": datetime.utcnow().isoformat() + "Z"})
+        .eq("id", session["id"])
+        .execute()
+    )
+
+    return {"status": "ended", "session_id": session["id"]}
 
 @app.get("/saas/session/history")
 def saas_session_history(auth_user=Depends(get_current_auth_user)):
@@ -768,36 +813,6 @@ def presenter_live(auth_user=Depends(get_current_auth_user)):
 
     sid = session["id"]
     return RedirectResponse(url=f"/presenter/{sid}", status_code=307)
-
-# =========================================================
-# MANUAL MATCH MULTI TENANT SESSION AWARE
-# =========================================================
-import match_verse
-
-@app.post("/match")
-def match_route(payload: Dict[str, Any]):
-    
-    try:
-        sid = payload.get("session_id", "demo")
-        text = payload.get("text", "").strip()
-        s = get_session(sid)
-
-       # print("TEXT:", repr(text))
-
-        r = match_text(text)
-        #print("MATCH RESULT:", r)
-
-        if not r.get("best"):
-            return {"status": "no_match"}
-
-        s["current"] = r
-        return {"status": "displayed", "result": r}
-
-    except Exception as e:
-        #print("ERROR IN /match:", e)
-        return {"status": "error", "detail": str(e)}
-
-
 
 # =========================================================
 # INGEST (for STT OR any external client)
@@ -866,62 +881,62 @@ def get_current_state(sid: str):
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)
 # =========================================================
-
-@app.get("/control")
-def control_root():
-    return RedirectResponse("/control/demo")
-
-
 @app.get("/control/{sid}", response_class=HTMLResponse)
 def control(sid: str):
-    short_sid = "…" + sid[-12:]  # last 12 chars, prefixed with ellipsis
-    return f"""
+    short_sid = "…" + sid[-12:]
+
+    # ================================================================
+    # HTML START
+    # ================================================================
+    html = f"""
 <!DOCTYPE html>
 <html>
 <head>
-...
-</head>
-<body>
-<div class="panel">
-  <h1>VerseCast Control Panel (session: {short_sid})</h1>
+<meta charset="utf-8" />
+<title>VerseCast Control Panel</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+"""
 
-
+    # ================================================================
+    # CSS STYLES
+    # ================================================================
+    html += """
 <style>
-body {{
+body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f5f5f5;
   padding: 30px;
-}}
-.panel {{
-    background: #ffffff;
-    padding: 30px 40px;
-    border-radius: 12px;
-    max-width: 1000px;
-    margin: 40px auto;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.08);
-    border: 1px solid #f0f0f0;
-}}
-h1 {{
+}
+.panel {
+  background: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  max-width: 1000px;
+  margin: 40px auto;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  border: 1px solid #f0f0f0;
+}
+h1 {
   margin-top: 0;
   font-size: 30px;
   font-weight: 800;
-}}
-.section-title {{
+}
+.section-title {
   margin-top: 30px;
   margin-bottom: 10px;
   font-size: 20px;
   font-weight: 700;
-}}
-.input-row {{
+}
+.input-row {
   display: flex;
   gap: 10px;
-}}
-.input-row input {{
+}
+.input-row input {
   flex: 1;
   padding: 10px;
   font-size: 16px;
-}}
-button {{
+}
+button {
   padding: 10px 18px;
   font-size: 15px;
   border-radius: 6px;
@@ -929,32 +944,30 @@ button {{
   border: none;
   background: #2563eb;
   color: white;
-}}
-button.danger {{
+}
+button.danger {
   background: #dc2626;
-}}
-.pending-box {{
+}
+.pending-box {
   background: #fef3c7;
   padding: 15px;
   border-radius: 8px;
   border: 1px solid #fcd34d;
-}}
-.pending-header {{
+}
+.pending-header {
   font-weight: bold;
   margin-bottom: 8px;
-}}
-.verse-box {{
+}
+.verse-box {
   white-space: pre-wrap;
   font-size: 18px;
   margin-bottom: 8px;
-}}
-.pending-meta {{
+}
+.pending-meta {
   font-size: 14px;
   color: #555;
-}}
-
-/* ⭐ Restored original status box styling */
-pre {{
+}
+pre {
   background: #1e1e1e;
   color: #0f0;
   padding: 18px;
@@ -962,48 +975,168 @@ pre {{
   margin-top: 10px;
   white-space: pre-wrap;
   font-size: 14px;
-}}
+}
 </style>
+"""
+
+    # ================================================================
+    # BODY START
+    # ================================================================
+    html += f"""
 </head>
-
 <body>
-  
-  <div style="margin-top: 10px; margin-bottom: 20px;">
-    <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
-      Open Presenter
-    </button>
-  </div>
 
-  <div class="section-title">Enter Reference or Phrase</div>
-  <div class="input-row">
-    <input id="t" value=""/>
-    <button onclick="match()">Match</button>
-  </div>
+<div class="panel">
+<h1>VerseCast Control Panel (session: {short_sid})</h1>
+"""
 
-  <div class="section-title">Pending (Best)</div>
-  <div id="pending_box" class="pending-box" style="display:none;">
-    <div class="pending-header" id="pending_ref"></div>
-    <div class="verse-box" id="pending_text"></div>
-    <div class="pending-meta">
-      Mode: <span id="pending_mode"></span>
-      &nbsp;|&nbsp;
-      Confidence: <span id="pending_conf"></span>
-    </div>
-    <div style="margin-top:12px;">
-      <button onclick="approve()">Approve / Display</button>
-      <button class="danger" onclick="clearPending()">Clear Pending</button>
-      <button class="danger" onclick="clearAll()">Clear All</button>
-    </div>
-  </div>
+    # ================================================================
+    # HEADER + PRESENTER BUTTON
+    # ================================================================
+    html += f"""
+<div style="margin-top: 10px; margin-bottom: 20px;">
+  <button onclick="window.open('/presenter/{sid}', '_blank')" style='background:#16a34a;'>
+    Open Presenter
+  </button>
+"""
 
-  <div class="section-title">Status</div>
-  <pre id="status_box">{{ "status": "idle" }}</pre>
+    # ================================================================
+    # STT BUTTONS
+    # ================================================================
+    html += """
+  <div style="margin-top: 20px; margin-bottom: 20px;">
+    <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
+    <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
+  </div>
 </div>
+"""
 
+    # ================================================================
+    # MANUAL MATCH INPUT
+    # ================================================================
+    html += """
+<div class="section-title">Enter Reference or Phrase</div>
+<div class="input-row">
+  <input id="t" value=""/>
+  <button onclick="match()">Match</button>
+</div>
+"""
+
+    # ================================================================
+    # PENDING BEST MATCH
+    # ================================================================
+    html += """
+<div class="section-title">Pending (Best)</div>
+<div id="pending_box" class="pending-box" style="display:none;">
+  <div class="pending-header" id="pending_ref"></div>
+  <div class="verse-box" id="pending_text"></div>
+  <div class="pending-meta">
+    Mode: <span id="pending_mode"></span>
+    &nbsp;|&nbsp;
+    Confidence: <span id="pending_conf"></span>
+  </div>
+
+  <div style="margin-top:12px;">
+    <button onclick="approve()">Approve / Display</button>
+    <button class="danger" onclick="clearPending()">Clear Pending</button>
+    <button class="danger" onclick="clearAll()">Clear All</button>
+  </div>
+</div>
+"""
+
+    # ================================================================
+    # STATUS BOX
+    # ================================================================
+    html += """
+<div class="section-title">Status</div>
+<pre id="status_box">{ "status": "idle" }</pre>
+
+</div> <!-- END PANEL -->
+"""
+
+    # ================================================================
+    # STT BACKGROUND ENGINE
+    # ================================================================
+    html += f"""
 <script>
-// ------------------------------
-// REFRESH PANEL
-// ------------------------------
+let audioContext = null;
+let workletNode = null;
+let mediaStream = null;
+let ws = null;
+
+async function enableSTT() {{
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  const sessionId = "{sid}";
+
+  if (!token) {{
+    alert("Missing token. Please start session from dashboard.");
+    return;
+  }}
+
+  ws = new WebSocket(`wss://api.versecast.ca/stt/stream?token=${{token}}&session_id=${{sessionId}}`);
+  ws.binaryType = "arraybuffer";
+
+  ws.onopen = () => {{
+    console.log("STT WebSocket connected");
+    ws.send(JSON.stringify({{
+      type: "start",
+      token: token,
+      session_id: sessionId
+    }}));
+  }};
+
+  ws.onclose = () => {{
+    console.log("STT WebSocket closed");
+  }};
+
+  mediaStream = await navigator.mediaDevices.getUserMedia({{ audio: true }});
+  audioContext = new AudioContext({{ sampleRate: 48000 }});
+
+  await audioContext.audioWorklet.addModule("/static/audio-worklet-processor.js");
+
+  const source = audioContext.createMediaStreamSource(mediaStream);
+  workletNode = new AudioWorkletNode(audioContext, "versecast-processor");
+
+  workletNode.port.onmessage = (event) => {{
+    if (ws && ws.readyState === WebSocket.OPEN) {{
+      ws.send(event.data);
+    }}
+  }};
+
+  source.connect(workletNode);
+  workletNode.connect(audioContext.destination);
+
+  document.getElementById("enable_stt_btn").style.display = "none";
+  document.getElementById("disable_stt_btn").style.display = "inline-block";
+}}
+
+function disableSTT() {{
+  try {{ ws?.send(JSON.stringify({{ type: "stop" }})); }} catch {{}}
+  try {{ ws?.close(); }} catch {{}}
+  try {{ workletNode?.disconnect(); }} catch {{}}
+  try {{ audioContext?.close(); }} catch {{}}
+  try {{ mediaStream?.getTracks().forEach(t => t.stop()); }} catch {{}}
+
+  ws = null;
+  audioContext = null;
+  workletNode = null;
+  mediaStream = null;
+
+  document.getElementById("enable_stt_btn").style.display = "inline-block";
+  document.getElementById("disable_stt_btn").style.display = "none";
+}}
+
+document.getElementById("enable_stt_btn").onclick = enableSTT;
+document.getElementById("disable_stt_btn").onclick = disableSTT;
+</script>
+"""
+
+    # ================================================================
+    # REFRESH PANEL
+    # ================================================================
+    html += f"""
+<script>
 async function refresh() {{
   let r = await fetch('/current/{sid}', {{
     headers: {{ "Content-Type": "application/json" }}
@@ -1027,30 +1160,38 @@ function setStatusFromResponse(j) {{
   document.getElementById('status_box').textContent =
     JSON.stringify({{ status: j.status }}, null, 2);
 }}
+</script>
+"""
 
-// ------------------------------
-// MATCH
-// ------------------------------
+    # ================================================================
+    # MATCH
+    # ================================================================
+    html += f"""
+<script>
 async function match() {{
   let r = await fetch('/match', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }},
     body: JSON.stringify({{
-      session_id:'{sid}',
-      text:document.getElementById('t').value
+      session_id: '{sid}',
+      text: document.getElementById('t').value
     }})
   }});
   let j = await r.json();
   setStatusFromResponse(j);
   await refresh();
 }}
+</script>
+"""
 
-// ------------------------------
-// APPROVE / CLEAR
-// ------------------------------
+    # ================================================================
+    # APPROVE / CLEAR
+    # ================================================================
+    html += f"""
+<script>
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
@@ -1060,7 +1201,7 @@ async function approve() {{
 
 async function clearPending() {{
   let r = await fetch('/clear_pending/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
@@ -1070,7 +1211,7 @@ async function clearPending() {{
 
 async function clearAll() {{
   let r = await fetch('/clear_all/{sid}', {{
-    method:'POST',
+    method: 'POST',
     headers: {{ "Content-Type": "application/json" }}
   }});
   let j = await r.json();
@@ -1081,20 +1222,32 @@ async function clearAll() {{
 refresh();
 setInterval(refresh, 1500);
 </script>
+"""
 
+    # ================================================================
+    # HTML END
+    # ================================================================
+    html += """
 </body>
 </html>
 """
 
+    return HTMLResponse(html)
+
+
+# ================================================================
+# FAVICON ROUTE (must be outside control())
+# ================================================================
+from fastapi.responses import FileResponse
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse("static/favicon.ico")
+
+
 # ================================================================
 # PRESENTER (redesigned, supports ranges + styling + auto font size)
 # ================================================================
-
-@app.get("/presenter")
-def presenter_root():
-    return RedirectResponse("/presenter/demo")
-
-
 @app.get("/presenter")
 def presenter_root():
     return RedirectResponse("/presenter/demo")
@@ -1165,9 +1318,6 @@ body {{
 
 <script>
 
-// ------------------------------
-// RENDER PASSAGE
-// ------------------------------
 function renderPassage(rawText) {{
   const container = document.getElementById('text');
   if (!rawText) {{
@@ -1197,9 +1347,6 @@ function renderPassage(rawText) {{
   container.innerHTML = htmlLines.join("\\n");
 }}
 
-// ------------------------------
-// REFRESH LOOP
-// ------------------------------
 async function refresh() {{
   try {{
     const r = await fetch('/current/{sid}', {{

@@ -528,6 +528,7 @@ app.add_middleware(
         "https://versecast-site.onrender.com",
         "https://www.versecast.ca",
         "https://versecast.ca",
+        "https://app.versecast.ca",
     ],
     allow_credentials=True,
     allow_methods=["*"],

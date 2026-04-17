@@ -1319,7 +1319,7 @@ body {{
   font-size: 14px;
   color: #ddd;
 }}
-#versecast-tagline {
+#versecast-tagline {{
   position: absolute;
   top: 10px;
   right: 20px;
@@ -1328,7 +1328,7 @@ body {{
   opacity: 0.8;
   text-align: right;
   pointer-events: none;
-}
+}}
 
 </style>
 </head>

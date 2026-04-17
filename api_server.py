@@ -24,6 +24,9 @@ from collections import Counter
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
+import sys
+print("SERVER STARTED", file=sys.stderr)
+
 # =========================================================
 # IMPORT MATCH ENGINE
 # =========================================================
@@ -557,7 +560,7 @@ def match_route(payload: Dict[str, Any]):
         # END TIMER
         # -----------------------------------------
         duration = time.time() - start
-        print(f"MATCH_TIME: {duration:.4f} seconds")
+        print(f"MATCH_TIME: {duration:.4f} seconds", file=sys.stderr)
 
         if not r.get("best"):
             return {"status": "no_match"}

@@ -1286,6 +1286,17 @@ body {{
   display: flex;
   flex-direction: column;
   height: 100vh;
+  #versecast-tagline {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 1.2rem;   /* matches your existing Presenter text scale */
+    color: white;        /* same color as your main text */
+    opacity: 0.8;        /* subtle, not distracting */
+    text-align: right;
+    pointer-events: none; /* prevents accidental selection */
+}
+
 }}
 .wrapper {{
   flex: 1;
@@ -1330,6 +1341,10 @@ body {{
   </div>
   <div class="status-bar" id="status"></div>
 </div>
+<div id="versecast-tagline">
+    Thy word is a lamp unto my feet, and a light unto my path. (Psalm 119:105)
+</div>
+
 
 <script>
 

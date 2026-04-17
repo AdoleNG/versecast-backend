@@ -546,7 +546,18 @@ def match_route(payload: Dict[str, Any]):
         text = payload.get("text", "").strip()
         s = get_session(sid)
 
+        # -----------------------------------------
+        # START TIMER
+        # -----------------------------------------
+        import time
+        start = time.time()
+
         r = match_text(text)
+        # -----------------------------------------
+        # END TIMER
+        # -----------------------------------------
+        duration = time.time() - start
+        print(f"MATCH_TIME: {duration:.4f} seconds")
 
         if not r.get("best"):
             return {"status": "no_match"}

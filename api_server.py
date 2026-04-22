@@ -29,12 +29,12 @@ import asyncpg
 import requests
 from core.websocket import broadcast_to_church   # or wherever this lives
 
-
-
 import sys
 print("SERVER STARTED", file=sys.stderr)
 print("BACKEND STARTED — LOGGING WORKS")
 
+# Configure logging ONCE
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 
 # =========================================================
 # IMPORT MATCH ENGINE

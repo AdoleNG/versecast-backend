@@ -2,9 +2,8 @@
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
 from dotenv import load_dotenv
-SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
-
 import os
+SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse

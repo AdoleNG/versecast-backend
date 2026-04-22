@@ -33,6 +33,8 @@ from core.websocket import broadcast_to_church   # or wherever this lives
 
 import sys
 print("SERVER STARTED", file=sys.stderr)
+print("BACKEND STARTED — LOGGING WORKS")
+
 
 # =========================================================
 # IMPORT MATCH ENGINE

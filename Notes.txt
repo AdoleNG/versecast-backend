@@ -1,4 +1,4 @@
-TO RUN USING CUSTOM DOMAIN             8bc33ab7-c2a5-4a7b-b8e7-c67fe371d624
+TO RUN USING CUSTOM DOMAIN            
 
 Notes
 
@@ -34,23 +34,3 @@ git add .
 git commit -m "Add accept invite page and routing"
 git push origin main
 
-
-ONBOARDING
-POST/SaS/onboarding/create-church
-GET/SaaS/onboarding/me
-
-
-
-Sessions
-POST Sessions/Start
-POST/SESSIONS/END
-GET/SESSIONS/CURRENT
-GET/SESSIONS/HISTORY
-
-OPERATORS
-POST/OPERATORS/INVITE
-GET/OPERATORS-list operators
-GET/OPERATORS/INVITATIONS
-GET/OPERATORS/GET-INVITE
-POST/OPERATORS/ACCEPT-INVITE
-POST/OPERATORS/DEACTIVATE

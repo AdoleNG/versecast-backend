@@ -2,10 +2,6 @@ Additional Notes
 
 https://jrgauouvwrqcmyqmwbrh.supabase.co
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q
-
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzY5Mzk2MSwiZXhwIjoyMDg5MjY5OTYxfQ.PWbu6_lEr-Ly2bEWUAlkVwAVad2108087oxa0w3H0WA
 
 
 USER ID:
@@ -21,15 +17,31 @@ Versecast2000@gmail.com
 
 PW = Rapture2026!
 
-https://www.versecast.ca/accept-invite?token=64a454e2-451d-4928-a21a-a4a0fcb7f691
-http://localhost:5173/login?next=%2Faccept-invite%3Ftoken%3D64a454e2-451d-4928-a21a-a4a0fcb7f691
-
-http://localhost:5173/accept-invite?token=8f27fa21-771b-45fc-b843-5e5361b47d63
-
 
 py -3.12 get_token.py
 To eget toknin powershell run this from the project backend folder
 
 
+git branch -M main
+git remote add origin https://github.com/AdoleNG/Kjv_project.git
+git push -u origin main
 
 
+
+
+
+SUPABASE_URLhttps://jrgauouvwrqcmyqmwbrh.supabase.co
+
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzY5Mzk2MSwiZXhwIjoyMDg5MjY5OTYxfQ.PWbu6_lEr-Ly2bEWUAlkVwAVad2108087oxa0w3H0WA
+
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZ2F1b3V2d3JxY215cW13YnJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM5NjEsImV4cCI6MjA4OTI2OTk2MX0.v_wUOSbVC1hK9TrxneQjH8x_-HAUBYsHenbEIelVQ3Q
+
+https://versecast-backend.onrender.com/control/demo
+https://versecast-backend.onrender.com/presenter/demo
+
+
+git init
+git remote add origin https://github.com/AdoleNG/versecast-backend
+git add .
+git commit -m "Initial commit"
+git push -u origin main

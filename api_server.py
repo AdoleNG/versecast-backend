@@ -2,6 +2,8 @@
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
 from dotenv import load_dotenv
+SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
+
 import os
 
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -25,7 +27,9 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import asyncio
 import asyncpg
-import json
+import requests
+from core.websocket import broadcast_to_church   # or wherever this lives
+
 
 
 import sys

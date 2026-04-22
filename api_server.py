@@ -32,6 +32,8 @@ from core.websocket import broadcast_to_church   # or wherever this lives
 import sys
 print("SERVER STARTED", file=sys.stderr)
 print("BACKEND STARTED — LOGGING WORKS")
+print("STATIC EXISTS:", os.path.isdir("static"))
+
 
 # -------------------------
 # LOGGING

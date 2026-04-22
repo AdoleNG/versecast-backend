@@ -33,8 +33,13 @@ import sys
 print("SERVER STARTED", file=sys.stderr)
 print("BACKEND STARTED — LOGGING WORKS")
 
+# -------------------------
+# LOGGING
+# -------------------------
 # Configure logging ONCE
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
+
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 # =========================================================
 # IMPORT MATCH ENGINE
@@ -601,6 +606,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# -------------------------
+# HEALTH CHECK
+# -------------------------
+@app.get("/", tags=["health"])
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(listen_for_session_deletes())
@@ -662,11 +675,6 @@ app.include_router(operators_router)
 
 
 # -------------------------
-# LOGGING
-# -------------------------
-logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-
-# -------------------------
 # GLOBAL EXCEPTION HANDLER
 # -------------------------
 
@@ -685,13 +693,6 @@ async def handler(request, exc):
         headers=headers
     )
 
-
-# -------------------------
-# HEALTH CHECK
-# -------------------------
-@app.get("/health")
-def health():
-    return {"ok": True}
 
 # =========================================================
 # SUPABASE HELPERS FOR MULTI-TENANCY
@@ -960,10 +961,6 @@ def get_current_state(sid: str):
         "pending": s.get("pending"),
         "current": s.get("current"),
     }
-
-@app.get("/", tags=["health"])
-async def health_check():
-    return {"status": "ok"}
 
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)

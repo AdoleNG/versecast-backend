@@ -518,6 +518,49 @@ def held(session, mode):
         return False
     return (time.time() - session["current_at"]) < HOLD_SECONDS
 
+# -------------------------------
+# Supabase DELETE event listener
+# -------------------------------
+
+async def handle_session_deleted(conn, pid, channel, payload):
+    """
+    Called automatically when a session row is deleted in Supabase.
+    """
+    try:
+        data = json.loads(payload)
+        church_id = data.get("church_id")
+
+        if church_id:
+            print(f"[Supabase] Session deleted for church {church_id}. Forcing end.")
+            await force_end_session_internal(church_id)
+
+    except Exception as e:
+        print("Error handling session_deleted event:", e)
+
+
+async def listen_for_session_deletes():
+    """
+    Opens a live connection to Supabase Postgres and listens for delete events.
+    """
+    conn = await asyncpg.connect(SUPABASE_DB_URL)
+    await conn.add_listener("session_deleted", handle_session_deleted)
+    print("Listening for Supabase session delete events...")
+
+async def force_end_session_internal(church_id: str):
+    """
+    Forcefully end a session even if the Supabase row is gone.
+    """
+    # Stop STT worker
+    try:
+        requests.post("http://127.0.0.1:8765/stop-worker")
+    except:
+        pass
+
+    # Broadcast to Control Panel + Presenter
+    broadcast_to_church(church_id, {"type": "session_ended"})
+
+    print(f"Force-ended session for church {church_id}")
+
 # ============================================================
 # FASTAPI APP
 # ============================================================
@@ -684,50 +727,6 @@ def get_current_session_for_user(user_id: str):
         return None
 
     return get_current_session_for_church(church_id)
-
-# -------------------------------
-# Supabase DELETE event listener
-# -------------------------------
-
-async def handle_session_deleted(conn, pid, channel, payload):
-    """
-    Called automatically when a session row is deleted in Supabase.
-    """
-    try:
-        data = json.loads(payload)
-        church_id = data.get("church_id")
-
-        if church_id:
-            print(f"[Supabase] Session deleted for church {church_id}. Forcing end.")
-            await force_end_session_internal(church_id)
-
-    except Exception as e:
-        print("Error handling session_deleted event:", e)
-
-
-async def listen_for_session_deletes():
-    """
-    Opens a live connection to Supabase Postgres and listens for delete events.
-    """
-    conn = await asyncpg.connect(SUPABASE_DB_URL)
-    await conn.add_listener("session_deleted", handle_session_deleted)
-    print("Listening for Supabase session delete events...")
-
-async def force_end_session_internal(church_id: str):
-    """
-    Forcefully end a session even if the Supabase row is gone.
-    """
-    # Stop STT worker
-    try:
-        requests.post("http://127.0.0.1:8765/stop-worker")
-    except:
-        pass
-
-    # Broadcast to Control Panel + Presenter
-    broadcast_to_church(church_id, {"type": "session_ended"})
-
-    print(f"Force-ended session for church {church_id}")
-
 
 # =========================================================
 # SAAS SESSION ENDPOINTS (TENANT-AWARE)

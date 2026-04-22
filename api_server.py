@@ -959,7 +959,7 @@ def get_current_state(sid: str):
         "current": s.get("current"),
     }
 
-    @app.get("/", tags=["health"])
+@app.get("/", tags=["health"])
 async def health_check():
     return {"status": "ok"}
 

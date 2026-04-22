@@ -958,6 +958,11 @@ def get_current_state(sid: str):
         "pending": s.get("pending"),
         "current": s.get("current"),
     }
+
+    @app.get("/", tags=["health"])
+async def health_check():
+    return {"status": "ok"}
+
 # =========================================================
 # CONTROL PANEL (rich UI, with /control redirect)
 # =========================================================

@@ -542,9 +542,21 @@ async def listen_for_session_deletes():
     """
     Opens a live connection to Supabase Postgres and listens for delete events.
     """
-    conn = await asyncpg.connect(SUPABASE_DB_URL)
-    await conn.add_listener("session_deleted", handle_session_deleted)
-    print("Listening for Supabase session delete events...")
+    print("DEBUG: Starting listener...", flush=True)
+    print("DEBUG: DB URL =", SUPABASE_DB_URL, flush=True)
+
+    try:
+        conn = await asyncpg.connect(SUPABASE_DB_URL)
+    except Exception as e:
+        print("DEBUG: Failed to connect to Postgres:", repr(e), flush=True)
+        return
+
+    try:
+        await conn.add_listener("session_deleted", handle_session_deleted)
+        print("Listening for Supabase session delete events...", flush=True)
+    except Exception as e:
+        print("DEBUG: Failed to add listener:", repr(e), flush=True)
+
 
 async def force_end_session_internal(church_id: str):
     """

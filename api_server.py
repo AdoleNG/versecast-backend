@@ -595,12 +595,16 @@ async def force_end_session_internal(church_id: str):
     """
     # Stop STT worker
     try:
-        requests.post("http://127.0.0.1:8765/stop-worker")
-    except:
-        pass
+        response = requests.post(
+            "https://versecast-backend-websocket.onrender.com/stop-worker",
+            timeout=10,
+        )
+        print(f"STT stop-worker response: {response.status_code}", flush=True)
+    except Exception as e:
+        print(f"Failed to stop STT worker: {e}", flush=True)
 
     # Broadcast to Control Panel + Presenter
-    broadcast_to_church(church_id, {"type": "session_ended"})
+    await broadcast_to_church(church_id, {"type": "session_ended"})
 
     print(f"Force-ended session for church {church_id}")
 

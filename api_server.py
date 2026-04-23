@@ -1250,7 +1250,6 @@ document.getElementById("disable_stt_btn").onclick = disableSTT;
     html += f"""
 <script>
 let sttStopped = false;
-const sessionId = "{sid}";
 
 async function refresh() {
   let r = await fetch('/current/{sid}', {

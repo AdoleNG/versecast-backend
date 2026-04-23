@@ -1259,7 +1259,11 @@ async function refresh() {{
   let s = await r.json();
   let p = s.pending;
 
+  console.log("REFRESH STATUS:", s);
+  console.log("STT STOPPED?", sttStopped);
+
   if (s.status === "idle" && s.pending === null && s.current === null) {{
+    console.log("SESSION ENDED DETECTED - calling disableSTT()");
     if (!sttStopped) {{
       disableSTT();
       sttStopped = true;

@@ -555,7 +555,7 @@ async def listen_for_session_deletes():
     Opens a live connection to Supabase Postgres and listens for delete events.
     """
     print("DEBUG: Starting listener...", flush=True)
-    print("DEBUG: Listener DB URL =", LISTENER_DATABASE_URL, flush=True)
+    print("DEBUG: Listener DB URL loaded", flush=True)
 
     try:
         conn = await asyncpg.connect(LISTENER_DATABASE_URL)

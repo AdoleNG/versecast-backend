@@ -3,7 +3,11 @@
 # ======================================================
 from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
 SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL")
+LISTENER_DATABASE_URL = os.getenv("LISTENER_DATABASE_URL")
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -33,7 +37,6 @@ import sys
 print("SERVER STARTED", file=sys.stderr)
 print("BACKEND STARTED — LOGGING WORKS")
 print("STATIC EXISTS:", os.path.isdir("static"))
-
 
 # -------------------------
 # LOGGING
@@ -552,10 +555,10 @@ async def listen_for_session_deletes():
     Opens a live connection to Supabase Postgres and listens for delete events.
     """
     print("DEBUG: Starting listener...", flush=True)
-    print("DEBUG: DB URL =", SUPABASE_DB_URL, flush=True)
+    print("DEBUG: Listener DB URL =", LISTENER_DATABASE_URL, flush=True)
 
     try:
-        conn = await asyncpg.connect(SUPABASE_DB_URL)
+        conn = await asyncpg.connect(LISTENER_DATABASE_URL)
     except Exception as e:
         print("DEBUG: Failed to connect to Postgres:", repr(e), flush=True)
         return

@@ -1249,30 +1249,38 @@ document.getElementById("disable_stt_btn").onclick = disableSTT;
     # ================================================================
     html += f"""
 <script>
-async function refresh() {{
-  let r = await fetch('/current/{sid}', {{
-    headers: {{ "Content-Type": "application/json" }}
-  }});
+let sttStopped = false;
+
+async function refresh() {
+  let r = await fetch('/current/{sid}', {
+    headers: { "Content-Type": "application/json" }
+  });
+
+  if (r.status === 404) {
+    if (!sttStopped) {
+      disableSTT();
+      sttStopped = true;
+    }
+
+    document.getElementById('status_box').textContent =
+      JSON.stringify({ status: "session_ended" }, null, 2);
+    return;
+  }
+
   let s = await r.json();
   let p = s.pending;
 
-  if (p && p.best) {{
+  if (p && p.best) {
     document.getElementById('pending_box').style.display = 'block';
     const v = p.best;
     document.getElementById('pending_ref').textContent = v.reference || v.ref || '';
     document.getElementById('pending_text').textContent = v.text_kjv || v.text || '';
     document.getElementById('pending_mode').textContent = p.mode || '';
     document.getElementById('pending_conf').textContent = p.confidence ?? '';
-  }} else {{
+  } else {
     document.getElementById('pending_box').style.display = 'none';
-  }}
-}}
-
-function setStatusFromResponse(j) {{
-  document.getElementById('status_box').textContent =
-    JSON.stringify({{ status: j.status }}, null, 2);
-}}
-</script>
+  }
+}
 """
 
     # ================================================================

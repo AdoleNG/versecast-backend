@@ -1168,7 +1168,7 @@ pre {
     # ================================================================
     # STT BACKGROUND ENGINE
     # ================================================================
-   html += f"""
+    html += f"""
 <script>
 let audioContext = null;
 let workletNode = null;

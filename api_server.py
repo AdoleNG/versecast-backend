@@ -1253,7 +1253,7 @@ let sttStopped = false;
 const sessionId = "{sid}";
 
 async function refresh() {
-  let r = await fetch(`/current/${sessionId}`, {
+  let r = await fetch(`/current/${{sessionId}}`, {
     headers: { "Content-Type": "application/json" }
   });
 

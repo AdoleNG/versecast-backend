@@ -552,22 +552,41 @@ async def handle_session_deleted(conn, pid, channel, payload):
 
 async def listen_for_session_deletes():
     """
-    Opens a live connection to Supabase Postgres and listens for delete events.
+    Opens a persistent live connection to Supabase Postgres
+    and listens for delete events with auto-reconnect.
     """
     print("DEBUG: Starting listener...", flush=True)
     print("DEBUG: Listener DB URL loaded", flush=True)
 
-    try:
-        conn = await asyncpg.connect(LISTENER_DATABASE_URL)
-    except Exception as e:
-        print("DEBUG: Failed to connect to Postgres:", repr(e), flush=True)
-        return
+    while True:
+        conn = None
 
-    try:
-        await conn.add_listener("session_deleted", handle_session_deleted)
-        print("Listening for Supabase session delete events...", flush=True)
-    except Exception as e:
-        print("DEBUG: Failed to add listener:", repr(e), flush=True)
+        try:
+            conn = await asyncpg.connect(
+                LISTENER_DATABASE_URL,
+                timeout=20,
+                command_timeout=60,
+                ssl="require",
+            )
+
+            await conn.add_listener("session_deleted", handle_session_deleted)
+            print("Listening for Supabase session delete events...", flush=True)
+
+            while True:
+                await asyncio.sleep(30)
+
+        except Exception as e:
+            print("Listener error:", repr(e), flush=True)
+
+        finally:
+            if conn:
+                try:
+                    await conn.close()
+                except Exception:
+                    pass
+
+        print("Reconnecting listener in 5 seconds...", flush=True)
+        await asyncio.sleep(5)
 
 
 async def force_end_session_internal(church_id: str):

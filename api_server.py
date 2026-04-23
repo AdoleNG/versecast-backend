@@ -1252,7 +1252,7 @@ document.getElementById("disable_stt_btn").onclick = disableSTT;
 let sttStopped = false;
 
 async function refresh() {
-  let r = await fetch('/current/{sid}', {
+  let r = await fetch(`/current/${sessionId}`, {
     headers: { "Content-Type": "application/json" }
   });
 

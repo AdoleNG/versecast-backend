@@ -1247,7 +1247,7 @@ document.getElementById("disable_stt_btn").onclick = disableSTT;
     # ================================================================
     # REFRESH PANEL
     # ================================================================
-   html += f"""
+    html += f"""
 <script>
 let sttStopped = false;
 

@@ -1256,20 +1256,20 @@ async function refresh() {{
     headers: {{ "Content-Type": "application/json" }}
   }});
 
-  if (s.status === "idle" && s.pending === null && s.current === null) {
-    if (!sttStopped) {
-    disableSTT();
-    sttStopped = true;
-  }
-
-  document.getElementById('status_box').textContent =
-    JSON.stringify({ status: "session_ended" }, null, 2);
-  document.getElementById('pending_box').style.display = 'none';
-  return;
-}
-
   let s = await r.json();
   let p = s.pending;
+
+  if (s.status === "idle" && s.pending === null && s.current === null) {{
+    if (!sttStopped) {{
+      disableSTT();
+      sttStopped = true;
+    }}
+
+    document.getElementById('status_box').textContent =
+      JSON.stringify({{ status: "session_ended" }}, null, 2);
+    document.getElementById('pending_box').style.display = 'none';
+    return;
+  }}
 
   if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
@@ -1289,7 +1289,7 @@ function setStatusFromResponse(j) {{
 }}
 </script>
 """
-
+    
     # ================================================================
     # MATCH
     # ================================================================

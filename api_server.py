@@ -1165,11 +1165,10 @@ pre {
 
 </div> <!-- END PANEL -->
 """
-
     # ================================================================
     # STT BACKGROUND ENGINE
     # ================================================================
-html += f"""
+   html += f"""
 <script>
 let audioContext = null;
 let workletNode = null;
@@ -1224,13 +1223,48 @@ async function enableSTT() {{
 }}
 
 function disableSTT() {{
-  console.log("disableSTT() START");
+  console.log("disableSTT() START", {{
+    hasWs: !!ws,
+    wsReadyState: ws ? ws.readyState : null,
+    hasWorkletNode: !!workletNode,
+    hasAudioContext: !!audioContext,
+    hasMediaStream: !!mediaStream
+  }});
 
-  try {{ ws?.send(JSON.stringify({{ type: "stop" }})); }} catch {{}}
-  try {{ ws?.close(); }} catch {{}}
-  try {{ workletNode?.disconnect(); }} catch {{}}
-  try {{ audioContext?.close(); }} catch {{}}
-  try {{ mediaStream?.getTracks().forEach(t => t.stop()); }} catch {{}}
+  try {{
+    ws?.send(JSON.stringify({{ type: "stop" }}));
+    console.log("disableSTT(): sent stop message");
+  }} catch (e) {{
+    console.log("disableSTT(): failed sending stop", e);
+  }}
+
+  try {{
+    ws?.close();
+    console.log("disableSTT(): closed websocket");
+  }} catch (e) {{
+    console.log("disableSTT(): failed closing websocket", e);
+  }}
+
+  try {{
+    workletNode?.disconnect();
+    console.log("disableSTT(): disconnected worklet");
+  }} catch (e) {{
+    console.log("disableSTT(): failed disconnecting worklet", e);
+  }}
+
+  try {{
+    audioContext?.close();
+    console.log("disableSTT(): closed audio context");
+  }} catch (e) {{
+    console.log("disableSTT(): failed closing audio context", e);
+  }}
+
+  try {{
+    mediaStream?.getTracks().forEach(t => t.stop());
+    console.log("disableSTT(): stopped media tracks");
+  }} catch (e) {{
+    console.log("disableSTT(): failed stopping media tracks", e);
+  }}
 
   ws = null;
   audioContext = null;
@@ -1240,14 +1274,20 @@ function disableSTT() {{
   document.getElementById("enable_stt_btn").style.display = "inline-block";
   document.getElementById("disable_stt_btn").style.display = "none";
 
-  console.log("disableSTT() END");
+  console.log("disableSTT() END", {{
+    enableBtnDisplay: document.getElementById("enable_stt_btn").style.display,
+    disableBtnDisplay: document.getElementById("disable_stt_btn").style.display
+  }});
+}}
 
+document.getElementById("enable_stt_btn").onclick = enableSTT;
+document.getElementById("disable_stt_btn").onclick = disableSTT;
 </script>
 """
     # ================================================================
     # REFRESH PANEL
     # ================================================================
-html += f"""
+    html += f"""
 <script>
 let sttStopped = false;
 
@@ -1260,17 +1300,19 @@ async function refresh() {{
   let p = s.pending;
 
   console.log("REFRESH STATUS:", s);
+  console.log("STT STOPPED?", sttStopped);
 
   if (s.status === "idle" && s.pending === null && s.current === null) {{
     if (!sttStopped) {{
-      console.log("SESSION ENDED → stopping STT");
+      console.log("SESSION ENDED DETECTED - calling disableSTT() now");
       disableSTT();
       sttStopped = true;
+    }} else {{
+      console.log("SESSION ENDED DETECTED - disableSTT() already called earlier");
     }}
 
     document.getElementById('status_box').textContent =
       JSON.stringify({{ status: "session_ended" }}, null, 2);
-
     document.getElementById('pending_box').style.display = 'none';
     return;
   }}
@@ -1278,13 +1320,18 @@ async function refresh() {{
   if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
     const v = p.best;
-    document.getElementById('pending_ref').textContent = v.reference || '';
-    document.getElementById('pending_text').textContent = v.text_kjv || '';
+    document.getElementById('pending_ref').textContent = v.reference || v.ref || '';
+    document.getElementById('pending_text').textContent = v.text_kjv || v.text || '';
     document.getElementById('pending_mode').textContent = p.mode || '';
     document.getElementById('pending_conf').textContent = p.confidence ?? '';
   }} else {{
     document.getElementById('pending_box').style.display = 'none';
   }}
+}}
+
+function setStatusFromResponse(j) {{
+  document.getElementById('status_box').textContent =
+    JSON.stringify({{ status: j.status }}, null, 2);
 }}
 </script>
 """
@@ -1292,7 +1339,7 @@ async function refresh() {{
     # ================================================================
     # MATCH
     # ================================================================
-html += f"""
+    html += f"""
 <script>
 async function match() {{
   let r = await fetch('/match', {{
@@ -1313,7 +1360,7 @@ async function match() {{
     # ================================================================
     # APPROVE / CLEAR
     # ================================================================
-html += f"""
+    html += f"""
 <script>
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
@@ -1353,11 +1400,12 @@ setInterval(refresh, 1500);
     # ================================================================
     # HTML END
     # ================================================================
-html += """
+    html += """
 </body>
 </html>
 """
-return HTMLResponse(html)
+
+    return HTMLResponse(html)
 
 
 # ================================================================

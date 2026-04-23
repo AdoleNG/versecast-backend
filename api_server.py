@@ -1169,7 +1169,7 @@ pre {
     # ================================================================
     # STT BACKGROUND ENGINE
     # ================================================================
-    html += f"""
+html += f"""
 <script>
 let audioContext = null;
 let workletNode = null;
@@ -1224,6 +1224,8 @@ async function enableSTT() {{
 }}
 
 function disableSTT() {{
+  console.log("disableSTT() START");
+
   try {{ ws?.send(JSON.stringify({{ type: "stop" }})); }} catch {{}}
   try {{ ws?.close(); }} catch {{}}
   try {{ workletNode?.disconnect(); }} catch {{}}
@@ -1237,17 +1239,15 @@ function disableSTT() {{
 
   document.getElementById("enable_stt_btn").style.display = "inline-block";
   document.getElementById("disable_stt_btn").style.display = "none";
-}}
 
-document.getElementById("enable_stt_btn").onclick = enableSTT;
-document.getElementById("disable_stt_btn").onclick = disableSTT;
+  console.log("disableSTT() END");
+
 </script>
 """
-
     # ================================================================
     # REFRESH PANEL
     # ================================================================
-    html += f"""
+html += f"""
 <script>
 let sttStopped = false;
 
@@ -1260,17 +1260,17 @@ async function refresh() {{
   let p = s.pending;
 
   console.log("REFRESH STATUS:", s);
-  console.log("STT STOPPED?", sttStopped);
 
   if (s.status === "idle" && s.pending === null && s.current === null) {{
-    console.log("SESSION ENDED DETECTED - calling disableSTT()");
     if (!sttStopped) {{
+      console.log("SESSION ENDED → stopping STT");
       disableSTT();
       sttStopped = true;
     }}
 
     document.getElementById('status_box').textContent =
       JSON.stringify({{ status: "session_ended" }}, null, 2);
+
     document.getElementById('pending_box').style.display = 'none';
     return;
   }}
@@ -1278,18 +1278,13 @@ async function refresh() {{
   if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
     const v = p.best;
-    document.getElementById('pending_ref').textContent = v.reference || v.ref || '';
-    document.getElementById('pending_text').textContent = v.text_kjv || v.text || '';
+    document.getElementById('pending_ref').textContent = v.reference || '';
+    document.getElementById('pending_text').textContent = v.text_kjv || '';
     document.getElementById('pending_mode').textContent = p.mode || '';
     document.getElementById('pending_conf').textContent = p.confidence ?? '';
   }} else {{
     document.getElementById('pending_box').style.display = 'none';
   }}
-}}
-
-function setStatusFromResponse(j) {{
-  document.getElementById('status_box').textContent =
-    JSON.stringify({{ status: j.status }}, null, 2);
 }}
 </script>
 """
@@ -1297,7 +1292,7 @@ function setStatusFromResponse(j) {{
     # ================================================================
     # MATCH
     # ================================================================
-    html += f"""
+html += f"""
 <script>
 async function match() {{
   let r = await fetch('/match', {{
@@ -1318,7 +1313,7 @@ async function match() {{
     # ================================================================
     # APPROVE / CLEAR
     # ================================================================
-    html += f"""
+html += f"""
 <script>
 async function approve() {{
   let r = await fetch('/approve/{sid}', {{
@@ -1358,12 +1353,11 @@ setInterval(refresh, 1500);
     # ================================================================
     # HTML END
     # ================================================================
-    html += """
+html += """
 </body>
 </html>
 """
-
-    return HTMLResponse(html)
+return HTMLResponse(html)
 
 
 # ================================================================

@@ -895,6 +895,25 @@ def saas_session_history(auth_user=Depends(get_current_auth_user)):
     return res.data or []
 
 # =========================================================
+# INTERNAL SESSION CHECK (FOR CONTROL PANEL)
+# =========================================================
+
+@app.get("/session_exists/{sid}")
+def session_exists(sid: str):
+    supabase = get_admin_supabase()
+
+    res = (
+        supabase.table("service_sessions")
+        .select("id")
+        .eq("id", sid)
+        .limit(1)
+        .execute()
+    )
+
+    exists = bool(res.data)
+    return {"exists": exists}
+
+# =========================================================
 # LIVE REDIRECTS (TENANT-AWARE)
 # =========================================================
 
@@ -1292,6 +1311,30 @@ document.getElementById("disable_stt_btn").onclick = disableSTT;
 let sttStopped = false;
 
 async function refresh() {{
+// ✅ NEW: real session check
+  let existsResponse = await fetch('/session_exists/{sid}', {{
+    headers: {{ "Content-Type": "application/json" }}
+  }});
+
+  let existsData = await existsResponse.json();
+
+  console.log("SESSION EXISTS:", existsData);
+
+  if (existsData.exists === false) {{
+    if (!sttStopped) {{
+      console.log("SESSION DELETED - stopping STT");
+      disableSTT();
+      sttStopped = true;
+    }}
+
+    document.getElementById('status_box').textContent =
+      JSON.stringify({{ status: "session_deleted" }}, null, 2);
+    document.getElementById('pending_box').style.display = 'none';
+    return;
+  }}
+
+  // ✅ EXISTING logic continues
+
   let r = await fetch('/current/{sid}', {{
     headers: {{ "Content-Type": "application/json" }}
   }});
@@ -1302,22 +1345,7 @@ async function refresh() {{
   console.log("REFRESH STATUS:", s);
   console.log("STT STOPPED?", sttStopped);
 
-  if (s.status === "idle" && s.pending === null && s.current === null) {{
-    if (!sttStopped) {{
-      console.log("SESSION ENDED DETECTED - calling disableSTT() now");
-      disableSTT();
-      sttStopped = true;
-    }} else {{
-      console.log("SESSION ENDED DETECTED - disableSTT() already called earlier");
-    }}
-
-    document.getElementById('status_box').textContent =
-      JSON.stringify({{ status: "session_ended" }}, null, 2);
-    document.getElementById('pending_box').style.display = 'none';
-    return;
-  }}
-
-  if (p && p.best) {{
+if (p && p.best) {{
     document.getElementById('pending_box').style.display = 'block';
     const v = p.best;
     document.getElementById('pending_ref').textContent = v.reference || v.ref || '';

@@ -904,15 +904,33 @@ def session_exists(sid: str):
 
     res = (
         supabase.table("service_sessions")
-        .select("id")
+        .select("id, ended_at")
         .eq("id", sid)
         .limit(1)
         .execute()
     )
 
-    exists = bool(res.data)
-    return {"exists": exists}
+    if not res.data:
+        return {
+            "exists": False,
+            "active": False,
+            "reason": "deleted"
+        }
 
+    session = res.data[0]
+
+    if session.get("ended_at") is not None:
+        return {
+            "exists": True,
+            "active": False,
+            "reason": "ended"
+        }
+
+    return {
+        "exists": True,
+        "active": True,
+        "reason": "active"
+    }
 # =========================================================
 # LIVE REDIRECTS (TENANT-AWARE)
 # =========================================================
@@ -1201,8 +1219,8 @@ async function enableSTT() {{
 
   const existsData = await existsResponse.json();
 
-  if (existsData.exists === false) {{
-    alert("This session has ended. Start a new session before enabling STT.");
+  if (existsData.active === false) {{
+    alert("This session is no longer active. Start a new session before enabling STT.");
     document.getElementById("enable_stt_btn").disabled = true;
     document.getElementById("enable_stt_btn").textContent = "Session Ended";
     return;
@@ -1334,7 +1352,7 @@ async function refresh() {{
 
   console.log("SESSION EXISTS:", existsData);
 
-  if (existsData.exists === false) {{
+  if (existsData.active === false) {{
     if (!sttStopped) {{
       console.log("SESSION DELETED - stopping STT");
       disableSTT();
@@ -1345,7 +1363,7 @@ async function refresh() {{
     document.getElementById("disable_stt_btn").style.display = "none";
 
     document.getElementById('status_box').textContent =
-      JSON.stringify({{ status: "session_deleted" }}, null, 2);
+      JSON.stringify({{ status: "session_inactive", reason: existsData.reason }}, null, 2);
     document.getElementById('pending_box').style.display = 'none';
     return;
   }}

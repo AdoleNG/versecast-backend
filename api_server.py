@@ -612,7 +612,8 @@ async def force_end_session_internal(church_id: str):
 # -------------------------------
 # Auto-end expired sessions (5 hours)
 # -------------------------------
-# async def auto_end_expired_sessions():
+
+async def auto_end_expired_sessions():
     """
     Automatically end sessions that have been active for more than 5 hours.
     """
@@ -643,12 +644,12 @@ async def force_end_session_internal(church_id: str):
 
                 await broadcast_to_church(church_id, {
                     "type": "session_ended",
-                    "reason": "auto_ended_after_5_hours",
+                    "reason": "auto_ended_after_2_minutes",
                     "session_id": session_id,
                 })
 
                 print(
-                    f"Auto-ended session {session_id} after 5 hours.",
+                    f"Auto-ended session {session_id} after 2 minutes.",
                     flush=True,
                 )
 

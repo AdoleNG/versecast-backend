@@ -25,6 +25,7 @@ import json
 import time
 import re
 import logging
+import psutil, os
 from collections import Counter
 from typing import Dict, Any, List, Optional
 from datetime import datetime
@@ -695,11 +696,17 @@ app.add_middleware(
 async def health_check():
     return {"status": "ok"}
 
+def log_memory(tag):
+    process = psutil.Process(os.getpid())
+    print(f"[MEMORY][{tag}] {process.memory_info().rss / (1024*1024):.2f} MB")
 
 @app.on_event("startup")
 async def startup_event():
+    log_memory("before anything")
     # asyncio.create_task(listen_for_session_deletes())
+    log_memory("after listener removed")
     asyncio.create_task(auto_end_expired_sessions())
+    log_memory("after auto-expiry worker")
 
 # ============================================================
 # MANUAL MATCH ROUTE — MUST BE ABOVE ROUTER INCLUDES

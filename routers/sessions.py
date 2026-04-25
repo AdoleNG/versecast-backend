@@ -58,7 +58,7 @@ def start_session(
         )
 
     # Create new session (no title)
-    churches_res = (
+    church_res = (
         supabase.table("churches")
         .select("name")
         .eq("church_id", church_id)

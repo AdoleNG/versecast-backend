@@ -620,7 +620,7 @@ async def auto_end_expired_sessions():
     while True:
         try:
             supabase = get_admin_supabase()
-            cutoff = (datetime.utcnow() - timedelta(minutes=2)).isoformat() + "Z"
+            cutoff = (datetime.utcnow() - timedelta(hours=5)).isoformat() + "Z"
             ended_at = datetime.utcnow().isoformat() + "Z"
 
             res = (
@@ -644,12 +644,12 @@ async def auto_end_expired_sessions():
 
                 await broadcast_to_church(church_id, {
                     "type": "session_ended",
-                    "reason": "auto_ended_after_2_minutes",
+                    "reason": "auto_ended_after_5_hours",
                     "session_id": session_id,
                 })
 
                 print(
-                    f"Auto-ended session {session_id} after 2 minutes.",
+                    f"Auto-ended session {session_id} after 5 hours.",
                     flush=True,
                 )
 
@@ -1210,6 +1210,7 @@ pre {
     <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
     <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
   </div>
+</div>
 """
 
     # ================================================================

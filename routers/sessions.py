@@ -67,6 +67,8 @@ def start_session(
     )
 
     church_rows = church_res.data or []
+    church_name = church_rows[0]["name"] if church_rows else None
+
     # Create new session
     session_res = (
         supabase.table("service_sessions")

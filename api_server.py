@@ -1206,7 +1206,7 @@ pre {
     # STT BUTTONS
     # ================================================================
     html += """
- </div>
+ <div style="margin-top: 20px; margin-bottom: 20px;">
     <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
     <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
   </div>

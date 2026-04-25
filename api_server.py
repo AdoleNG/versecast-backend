@@ -1195,6 +1195,20 @@ let mediaStream = null;
 let ws = null;
 
 async function enableSTT() {{
+  const existsResponse = await fetch('/session_exists/{sid}', {{
+    headers: {{ "Content-Type": "application/json" }}
+  }});
+
+  const existsData = await existsResponse.json();
+
+  if (existsData.exists === false) {{
+    alert("This session has ended. Start a new session before enabling STT.");
+    document.getElementById("enable_stt_btn").disabled = true;
+    document.getElementById("enable_stt_btn").textContent = "Session Ended";
+    return;
+  }}
+
+  sttStopped = false;
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
   const sessionId = "{sid}";
@@ -1326,6 +1340,9 @@ async function refresh() {{
       disableSTT();
       sttStopped = true;
     }}
+    document.getElementById("enable_stt_btn").disabled = true;
+    document.getElementById("enable_stt_btn").textContent = "Session Ended";
+    document.getElementById("disable_stt_btn").style.display = "none";
 
     document.getElementById('status_box').textContent =
       JSON.stringify({{ status: "session_deleted" }}, null, 2);

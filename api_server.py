@@ -33,6 +33,8 @@ import asyncio
 import asyncpg
 import requests
 from core.websocket import broadcast_to_church   # or wherever this lives
+import math
+from datetime import datetime, timezone 
 
 import sys
 print("SERVER STARTED", file=sys.stderr)
@@ -957,6 +959,107 @@ def saas_session_history(auth_user=Depends(get_current_auth_user)):
 
     return res.data or []
 
+@app.post("/stt_usage/start")
+def start_stt_usage(payload: dict, auth_user=Depends(get_current_auth_user)):
+    session_id = payload.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    supabase = get_admin_supabase()
+
+    session_res = (
+        supabase.table("service_sessions")
+        .select("id, church_id, name, ended_at")
+        .eq("id", session_id)
+        .limit(1)
+        .execute()
+    )
+
+    rows = session_res.data or []
+    if not rows:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session = rows[0]
+
+    if session.get("ended_at") is not None:
+        raise HTTPException(status_code=403, detail="Session is no longer active")
+
+    usage_res = (
+        supabase.table("stt_usage")
+        .insert({
+            "session_id": session_id,
+            "church_id": session["church_id"],
+            "church_name": session.get("name"),
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        })
+        .execute()
+    )
+
+    usage_rows = usage_res.data or []
+    if not usage_rows:
+        raise HTTPException(status_code=500, detail="Failed to start STT usage tracking")
+
+    return {
+        "status": "started",
+        "usage_id": usage_rows[0]["id"],
+    }
+
+
+@app.post("/stt_usage/stop")
+def stop_stt_usage(payload: dict, auth_user=Depends(get_current_auth_user)):
+    usage_id = payload.get("usage_id")
+    stop_reason = payload.get("stop_reason", "manual")
+
+    if not usage_id:
+        raise HTTPException(status_code=400, detail="usage_id is required")
+
+    supabase = get_admin_supabase()
+
+    usage_res = (
+        supabase.table("stt_usage")
+        .select("id, started_at, stopped_at")
+        .eq("id", usage_id)
+        .limit(1)
+        .execute()
+    )
+
+    rows = usage_res.data or []
+    if not rows:
+        raise HTTPException(status_code=404, detail="STT usage record not found")
+
+    usage = rows[0]
+
+    if usage.get("stopped_at") is not None:
+        return {
+            "status": "already_stopped",
+            "usage_id": usage_id,
+        }
+
+    started_at = datetime.fromisoformat(
+        usage["started_at"].replace("Z", "+00:00")
+    )
+
+    stopped_at = datetime.now(timezone.utc)
+    duration_seconds = (stopped_at - started_at).total_seconds()
+    duration_minutes = max(1, math.ceil(duration_seconds / 60))
+
+    update_res = (
+        supabase.table("stt_usage")
+        .update({
+            "stopped_at": stopped_at.isoformat(),
+            "duration_minutes": duration_minutes,
+            "stop_reason": stop_reason,
+        })
+        .eq("id", usage_id)
+        .execute()
+    )
+
+    return {
+        "status": "stopped",
+        "usage_id": usage_id,
+        "duration_minutes": duration_minutes,
+    }
+
 # =========================================================
 # INTERNAL SESSION CHECK (FOR CONTROL PANEL)
 # =========================================================
@@ -1274,6 +1377,7 @@ let audioContext = null;
 let workletNode = null;
 let mediaStream = null;
 let ws = null;
+let activeUsageId = null;
 
 async function enableSTT() {{
   const existsResponse = await fetch('/session_exists/{sid}', {{
@@ -1298,6 +1402,26 @@ async function enableSTT() {{
     alert("Missing token. Please start session from dashboard.");
     return;
   }}
+
+  const usageRes = await fetch('/stt_usage/start', {{
+  method: 'POST',
+  headers: {{
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${{token}}`
+  }},
+  body: JSON.stringify({{
+    session_id: sessionId
+  }})
+}});
+
+if (!usageRes.ok) {{
+  alert("Cannot enable STT because this session is not active.");
+  return;
+}}
+
+const usageData = await usageRes.json();
+activeUsageId = usageData.usage_id;
+console.log("STT usage tracking started:", activeUsageId);
 
   ws = new WebSocket(`wss://api.versecast.ca/stt/stream?token=${{token}}&session_id=${{sessionId}}`);
   ws.binaryType = "arraybuffer";
@@ -1351,7 +1475,18 @@ function disableSTT() {{
   }} catch (e) {{
     console.log("disableSTT(): failed sending stop", e);
   }}
-
+if (activeUsageId) {{
+  fetch('/stt_usage/stop', {{
+    method: 'POST',
+    headers: {{
+      "Content-Type": "application/json"
+    }},
+    body: JSON.stringify({{
+      usage_id: activeUsageId,
+      stop_reason: "manual"
+    }})
+  }}).catch(e => console.log("Failed to stop STT usage tracking", e));
+}}
   try {{
     ws?.close();
     console.log("disableSTT(): closed websocket");
@@ -1384,6 +1519,7 @@ function disableSTT() {{
   audioContext = null;
   workletNode = null;
   mediaStream = null;
+  activeUsageId = null;
 
   document.getElementById("enable_stt_btn").style.display = "inline-block";
   document.getElementById("disable_stt_btn").style.display = "none";

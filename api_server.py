@@ -20,12 +20,11 @@ from routers.operators import router as operators_router
 
 from core.supabase import get_admin_supabase
 from core.auth import get_current_auth_user
-
+import psutil, os
 import json
 import time
 import re
 import logging
-import psutil, os
 from collections import Counter
 from typing import Dict, Any, List, Optional
 from datetime import datetime

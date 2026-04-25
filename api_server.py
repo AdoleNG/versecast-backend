@@ -950,7 +950,7 @@ def saas_session_history(auth_user=Depends(get_current_auth_user)):
 
     res = (
         supabase.table("service_sessions")
-        .select("id, church_id, title, started_at, ended_at")
+        .select("id, church_id, name, title, started_at, ended_at")
         .eq("church_id", church_id)
         .order("started_at", desc=True)
         .limit(50)
@@ -1397,6 +1397,7 @@ async function enableSTT() {{
   sttStopped = false;
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
+  activeToken = token;
   
   const sessionId = "{sid}";
 
@@ -1528,6 +1529,7 @@ if (activeUsageId && activeToken) {{
   workletNode = null;
   mediaStream = null;
   activeUsageId = null;
+  activeToken = null;
 
   document.getElementById("enable_stt_btn").style.display = "inline-block";
   document.getElementById("disable_stt_btn").style.display = "none";

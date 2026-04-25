@@ -59,14 +59,24 @@ def start_session(
 
     # Create new session (no title)
     session_res = (
-        supabase.table("service_sessions")
-        .insert({
-            "church_id": church_id,
-            "created_by": auth_user_id,
-        })
+        supabase.table("churches")
+        .select("name")
+        .eq("church_id", church_id)
+        .limit(1)
         .execute()
     )
 
+    church_rows = church_res.data or []
+    # Create new session
+    session_res = (
+        supabase.table("service_sessions")
+        .insert({
+                "church_id": church_id,
+                "name": church_name,
+                "created_by": auth_user_id,
+        })
+        .execute()
+    )        
     session_rows = session_res.data or []
     if not session_rows:
         raise HTTPException(

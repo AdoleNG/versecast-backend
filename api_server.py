@@ -857,7 +857,13 @@ def saas_start_session(auth_user=Depends(get_current_auth_user)):
         )
 
     supabase = get_admin_supabase()
-
+    church_res = (
+        supabase.table("churches")
+        .select("name")
+        .eq("id", church_id)
+        .single()
+        .execute()
+    )
     res = (
         supabase.table("service_sessions")
         .insert(

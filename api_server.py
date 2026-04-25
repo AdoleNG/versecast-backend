@@ -1154,10 +1154,20 @@ pre {
     # ================================================================
     html += """
   <div style="margin-top: 20px; margin-bottom: 20px;">
+  <div style="
+  background:#fef3c7;
+  border:1px solid #f59e0b;
+  color:#92400e;
+  padding:12px 16px;
+  border-radius:8px;
+  margin:16px 0;
+  font-weight:600;
+">
+  Remember to disable STT when service ends.
+</div>
     <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
     <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
   </div>
-</div>
 """
 
     # ================================================================

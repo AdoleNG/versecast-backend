@@ -28,6 +28,7 @@ import logging
 from collections import Counter
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 import asyncpg
 import requests
@@ -608,6 +609,56 @@ async def force_end_session_internal(church_id: str):
 
     print(f"Force-ended session for church {church_id}")
 
+# -------------------------------
+# Auto-end expired sessions (5 hours)
+# -------------------------------
+# async def auto_end_expired_sessions():
+    """
+    Automatically end sessions that have been active for more than 5 hours.
+    """
+    while True:
+        try:
+            supabase = get_admin_supabase()
+            cutoff = (datetime.utcnow() - timedelta(minutes=2)).isoformat() + "Z"
+            ended_at = datetime.utcnow().isoformat() + "Z"
+
+            res = (
+                supabase.table("service_sessions")
+                .select("id, church_id, started_at")
+                .is_("ended_at", None)
+                .lt("started_at", cutoff)
+                .execute()
+            )
+
+            expired_sessions = res.data or []
+
+            for session in expired_sessions:
+                session_id = session["id"]
+                church_id = session["church_id"]
+
+                supabase.table("service_sessions") \
+                    .update({"ended_at": ended_at}) \
+                    .eq("id", session_id) \
+                    .execute()
+
+                await broadcast_to_church(church_id, {
+                    "type": "session_ended",
+                    "reason": "auto_ended_after_5_hours",
+                    "session_id": session_id,
+                })
+
+                print(
+                    f"Auto-ended session {session_id} after 5 hours.",
+                    flush=True,
+                )
+
+        except Exception as e:
+            print("Auto-end session check failed:", repr(e), flush=True)
+
+        await asyncio.sleep(300)
+# 
+#     
+
 # ============================================================
 # FASTAPI APP
 # ============================================================
@@ -645,6 +696,7 @@ async def health_check():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(listen_for_session_deletes())
+    asyncio.create_task(auto_end_expired_sessions())
 
 # ============================================================
 # MANUAL MATCH ROUTE — MUST BE ABOVE ROUTER INCLUDES
@@ -1153,18 +1205,7 @@ pre {
     # STT BUTTONS
     # ================================================================
     html += """
-  <div style="margin-top: 20px; margin-bottom: 20px;">
-  <div style="
-  background:#fef3c7;
-  border:1px solid #f59e0b;
-  color:#92400e;
-  padding:12px 16px;
-  border-radius:8px;
-  margin:16px 0;
-  font-weight:600;
-">
-  Remember to disable STT when service ends.
-</div>
+ </div>
     <button id="enable_stt_btn" style="background:#2563eb;">Enable STT</button>
     <button id="disable_stt_btn" style="background:#dc2626; display:none;">Disable STT</button>
   </div>

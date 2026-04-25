@@ -857,24 +857,29 @@ def saas_start_session(auth_user=Depends(get_current_auth_user)):
         )
 
     supabase = get_admin_supabase()
+
     church_res = (
         supabase.table("churches")
         .select("name")
-        .eq("id", church_id)
+        .eq("church_id", church_id)  # change to the real churches key column
         .single()
         .execute()
     )
+
+    church_name = church_res.data["name"]
+
     res = (
         supabase.table("service_sessions")
         .insert(
             {
                 "church_id": church_id,
+                "name": church_name,
                 "title": "Live Service",
                 "started_at": datetime.utcnow().isoformat() + "Z",
                 "ended_at": None,
             }
         )
-        .select("id, church_id, title, started_at, ended_at")
+        .select("id, church_id, name, title, started_at, ended_at")
         .single()
         .execute()
     )
@@ -887,7 +892,6 @@ def saas_start_session(auth_user=Depends(get_current_auth_user)):
         )
 
     return session
-
 @app.post("/saas/session/end")
 def saas_end_session(auth_user=Depends(get_current_auth_user)):
     """

@@ -1424,6 +1424,7 @@ if (!usageRes.ok) {{
 
 const usageData = await usageRes.json();
 activeUsageId = usageData.usage_id;
+sessionStorage.setItem("active_stt_usage_id_{sid}", activeUsageId);
 console.log("STT usage tracking started:", activeUsageId);
 
   ws = new WebSocket(`wss://api.versecast.ca/stt/stream?token=${{token}}&session_id=${{sessionId}}`);
@@ -1478,23 +1479,36 @@ function disableSTT() {{
   }} catch (e) {{
     console.log("disableSTT(): failed sending stop", e);
   }}
-if (activeUsageId && activeToken) {{
+const usageIdToStop = activeUsageId || sessionStorage.getItem("active_stt_usage_id_{sid}");
+const tokenToUse = activeToken || new URLSearchParams(window.location.search).get("token");
+
+console.log("STT usage stop attempt:", {{
+  usageIdToStop: usageIdToStop,
+  hasToken: !!tokenToUse
+}});
+
+if (usageIdToStop && tokenToUse) {{
   fetch('/stt_usage/stop', {{
     method: 'POST',
     headers: {{
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${{activeToken}}`
+      "Authorization": `Bearer ${{tokenToUse}}`
     }},
     body: JSON.stringify({{
-      usage_id: activeUsageId,
+      usage_id: usageIdToStop,
       stop_reason: "manual"
     }})
   }})
   .then(async (res) => {{
     const body = await res.text();
     console.log("STT usage stop response:", res.status, body);
+    if (res.ok) {{
+      sessionStorage.removeItem("active_stt_usage_id_{sid}");
+    }}
   }})
   .catch(e => console.log("Failed to stop STT usage tracking", e));
+}} else {{
+  console.log("STT usage stop skipped: missing usage id or token");
 }}
   try {{
     ws?.close();

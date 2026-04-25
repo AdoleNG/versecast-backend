@@ -61,3 +61,5 @@ yarl==1.23.0
 zstandard==0.25.0
 resend==0.8.0
 asyncpg
+psutil
+

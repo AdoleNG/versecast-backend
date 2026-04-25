@@ -698,7 +698,7 @@ async def health_check():
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(listen_for_session_deletes())
+    #asyncio.create_task(listen_for_session_deletes())
     asyncio.create_task(auto_end_expired_sessions())
 
 # ============================================================

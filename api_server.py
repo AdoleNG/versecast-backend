@@ -1378,6 +1378,7 @@ let workletNode = null;
 let mediaStream = null;
 let ws = null;
 let activeUsageId = null;
+let activeToken = null;
 
 async function enableSTT() {{
   const existsResponse = await fetch('/session_exists/{sid}', {{
@@ -1396,6 +1397,7 @@ async function enableSTT() {{
   sttStopped = false;
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
+  
   const sessionId = "{sid}";
 
   if (!token) {{
@@ -1475,17 +1477,23 @@ function disableSTT() {{
   }} catch (e) {{
     console.log("disableSTT(): failed sending stop", e);
   }}
-if (activeUsageId) {{
+if (activeUsageId && activeToken) {{
   fetch('/stt_usage/stop', {{
     method: 'POST',
     headers: {{
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${{activeToken}}`
     }},
     body: JSON.stringify({{
       usage_id: activeUsageId,
       stop_reason: "manual"
     }})
-  }}).catch(e => console.log("Failed to stop STT usage tracking", e));
+  }})
+  .then(async (res) => {{
+    const body = await res.text();
+    console.log("STT usage stop response:", res.status, body);
+  }})
+  .catch(e => console.log("Failed to stop STT usage tracking", e));
 }}
   try {{
     ws?.close();

@@ -20,7 +20,7 @@ from routers.operators import router as operators_router
 
 from core.supabase import get_admin_supabase
 from core.auth import get_current_auth_user
-import psutil, os
+
 import json
 import time
 import re
@@ -37,6 +37,17 @@ import math
 from datetime import datetime, timezone 
 
 import sys
+
+import psutil, os
+
+def log_memory(tag):
+    process = psutil.Process(os.getpid())
+    print(f"[MEMORY][{tag}] {process.memory_info().rss / (1024*1024):.2f} MB", flush=True)
+
+log_memory("after imports")
+
+
+
 print("SERVER STARTED", file=sys.stderr)
 print("BACKEND STARTED — LOGGING WORKS")
 print("STATIC EXISTS:", os.path.isdir("static"))
@@ -668,6 +679,8 @@ async def auto_end_expired_sessions():
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+log_memory("after static mount")
+
 
 # ------------------------------
 # CORS CONFIGURATION
@@ -762,6 +775,8 @@ def match_route(payload: Dict[str, Any]):
 app.include_router(onboarding_router)
 app.include_router(sessions_router)
 app.include_router(operators_router)
+log_memory("after routers")
+
 
 
 # -------------------------

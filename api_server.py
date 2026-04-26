@@ -9,6 +9,15 @@ print("🔥 FILE:", __file__, flush=True)
 print("🔥 PID:", os.getpid(), flush=True)
 print("🔥 PYTHON:", sys.executable, flush=True)
 
+import psutil
+
+def log_memory(label):
+    process = psutil.Process(os.getpid())
+    rss = process.memory_info().rss / 1024 / 1024
+    print(f"🧠 MEMORY [{label}]: {rss:.2f} MB", flush=True)
+
+log_memory("after entrypoint")
+
 from dotenv import load_dotenv
 import os
 

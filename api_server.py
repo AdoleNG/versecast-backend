@@ -79,13 +79,14 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 # =========================================================
 # IMPORT MATCH ENGINE
 # =========================================================
-
+log_memory("before loading scripture data")
 from match_verse import (
     load_verses_index,
     load_json,
     build_phrase_lookup,
     match_scripture,
 )
+log_memory("after loading scripture data")
 
 # =========================================================
 # FILES
@@ -692,16 +693,18 @@ async def auto_end_expired_sessions():
 # ============================================================
 # FASTAPI APP
 # ============================================================
-
+log_memory("before app = FastAPI")
 app = FastAPI()
-log_memory("after static mount")
+log_memory("after app = FastAPI")
+log_memory("checkpoint before app setup")
 
 
 # ------------------------------
 # CORS CONFIGURATION
 # ------------------------------
+log_memory("before middleware")
 app.add_middleware(
-    CORSMiddleware,
+     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -715,7 +718,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+
 )
+log_memory("after middleware") 
+
 # -------------------------
 # HEALTH CHECK
 # -------------------------
@@ -786,11 +792,13 @@ def match_route(payload: Dict[str, Any]):
 # ============================================================
 # ROUTERS — MUST COME AFTER /match
 # ============================================================
-
+log_memory("before include routers")
 app.include_router(onboarding_router)
 app.include_router(sessions_router)
 app.include_router(operators_router)
+log_memory("after include routers")
 log_memory("after routers")
+
 
 
 

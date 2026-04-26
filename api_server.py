@@ -695,7 +695,6 @@ async def auto_end_expired_sessions():
 # ============================================================
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
 log_memory("after static mount")
 
 
@@ -1485,7 +1484,7 @@ console.log("STT usage tracking started:", activeUsageId);
   mediaStream = await navigator.mediaDevices.getUserMedia({{ audio: true }});
   audioContext = new AudioContext({{ sampleRate: 48000 }});
 
-  await audioContext.audioWorklet.addModule("/static/audio-worklet-processor.js");
+  await audioContext.audioWorklet.addModule("https://www.versecast.ca/audio-worklet-processor.js");
 
   const source = audioContext.createMediaStreamSource(mediaStream);
   workletNode = new AudioWorkletNode(audioContext, "versecast-processor");

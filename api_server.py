@@ -1,6 +1,14 @@
 # ======================================================
 # KJV LIVE VERSE ENGINE — API SERVER (NO STT INSIDE)
 # ======================================================
+import os
+import sys
+
+print("🔥🔥🔥 API_SERVER IMPORTED", flush=True)
+print("🔥 FILE:", __file__, flush=True)
+print("🔥 PID:", os.getpid(), flush=True)
+print("🔥 PYTHON:", sys.executable, flush=True)
+
 from dotenv import load_dotenv
 import os
 

@@ -98,31 +98,54 @@ KEYWORD_INDEX_FILE = "keyword_index.json"
 PHRASE_DICT_FILE = "phrase_dictionary.json"
 
 # =========================================================
-# LOAD MATCH DATA (BLOCK 1 — USING load_verses_index)
+# LAZY LOAD MATCH DATA
 # =========================================================
-log_memory("before VERSES")
-VERSES = load_verses_index()
-log_memory("after VERSES")
 
-log_memory("before KEYWORD_INDEX")
-KEYWORD_INDEX = load_json(KEYWORD_INDEX_FILE)
-log_memory("after VERSES")
-log_memory("after KEYWORD_INDEX")
+VERSES = None
+KEYWORD_INDEX = None
+PHRASE_LOOKUP = None
 
-log_memory("before phrase_entries")
-try:
-    phrase_entries = load_json(PHRASE_DICT_FILE)
-    if not isinstance(phrase_entries, list):
-        phrase_entries = []
-        
-except FileNotFoundError:
-    phrase_entries = []
-log_memory("after phrase_entries")
 
-log_memory("before PHRASE_LOOKUP")
-PHRASE_LOOKUP = build_phrase_lookup(phrase_entries)
-log_memory("after PHRASE_LOOKUP")
+def get_verses():
+    global VERSES
+    if VERSES is None:
+        print("🔥 Loading VERSES...", flush=True)
+        log_memory("before lazy VERSES load")
+        VERSES = load_verses_index()
+        log_memory("after lazy VERSES load")
+    return VERSES
 
+
+def get_keyword_index():
+    global KEYWORD_INDEX
+    if KEYWORD_INDEX is None:
+        print("🔥 Loading KEYWORD_INDEX...", flush=True)
+        log_memory("before lazy KEYWORD_INDEX load")
+        KEYWORD_INDEX = load_json(KEYWORD_INDEX_FILE)
+        log_memory("after lazy KEYWORD_INDEX load")
+    return KEYWORD_INDEX
+
+
+def get_phrase_lookup():
+    global PHRASE_LOOKUP
+    if PHRASE_LOOKUP is None:
+        print("🔥 Loading PHRASE_LOOKUP...", flush=True)
+        log_memory("before lazy phrase_entries load")
+
+        try:
+            phrase_entries = load_json(PHRASE_DICT_FILE)
+            if not isinstance(phrase_entries, list):
+                phrase_entries = []
+        except FileNotFoundError:
+            phrase_entries = []
+
+        log_memory("after lazy phrase_entries load")
+
+        log_memory("before lazy PHRASE_LOOKUP build")
+        PHRASE_LOOKUP = build_phrase_lookup(phrase_entries)
+        log_memory("after lazy PHRASE_LOOKUP build")
+
+    return PHRASE_LOOKUP
 # =========================================================
 # DISPLAY / WORKFLOW CONFIG
 # =========================================================
@@ -453,15 +476,18 @@ def parse_reference(text: str):
 # =========================================================
 
 def build_range(book: str, chapter: int, start: int, end: int):
+    verses = get_verses()
+
     if end < start:
         start, end = end, start
 
     lines = []
     for v in range(start, end + 1):
         vid = verse_id(book, chapter, v)
-        verse = VERSES.get(vid)
+        verse = verses.get(vid)
         if not verse:
             continue
+
         ref = verse.get("reference") or verse.get("ref") or f"{book} {chapter}:{v}"
         text = verse.get("text_kjv") or verse.get("text") or ""
         lines.append(f"{ref} {text}")
@@ -478,40 +504,52 @@ def build_range(book: str, chapter: int, start: int, end: int):
         },
     }
 
+
 # =========================================================
 # MATCH ENGINE
 # =========================================================
 
 def phrase_match(text: str):
+    verses = get_verses()
+    phrase_lookup = get_phrase_lookup()
+
     norm = normalize_text(text)
-    for p, entries in PHRASE_LOOKUP.items():
+
+    for p, entries in phrase_lookup.items():
         if p in norm:
             vid = entries[0].get("verse_id")
-            if vid and vid in VERSES:
+            if vid and vid in verses:
                 return {
                     "mode": "phrase",
                     "confidence": PHRASE_CONFIDENCE,
-                    "verse": VERSES[vid],
+                    "verse": verses[vid],
                 }
+
     return None
 
 
 def keyword_match(text: str):
+    verses = get_verses()
+    keyword_index = get_keyword_index()
+
     tokens = tokenize(text)
     if not is_quote_like(tokens):
         return {"mode": "none"}
 
     counts = Counter(tokens)
     cands = set()
+
     for t in counts:
-        for vid in KEYWORD_INDEX.get(t, []):
+        for vid in keyword_index.get(t, []):
             cands.add(vid)
 
     scored = []
+
     for vid in cands:
-        v = VERSES.get(vid)
+        v = verses.get(vid)
         if not v:
             continue
+
         w = v.get("keyword_weights", {})
         overlap = sum(min(counts[t], w.get(t, 0)) for t in counts)
         conf = overlap / float(sum(counts.values()))
@@ -522,11 +560,21 @@ def keyword_match(text: str):
 
     scored.sort(key=lambda x: x[0], reverse=True)
     conf, verse = scored[0]
-    return {"mode": "keyword", "confidence": round(conf, 3), "verse": verse}
+
+    return {
+        "mode": "keyword",
+        "confidence": round(conf, 3),
+        "verse": verse,
+    }
 
 
 def match_text(text: str):
-    return match_scripture(text, VERSES, KEYWORD_INDEX, PHRASE_LOOKUP)
+    return match_scripture(
+        text,
+        get_verses(),
+        get_keyword_index(),
+        get_phrase_lookup(),
+    )
 
 # =========================================================
 # SESSION STATE (IN-MEMORY)

@@ -701,6 +701,7 @@ def log_memory(tag):
 
 @app.on_event("startup")
 async def startup_event():
+    print("STARTUP EVENT FIRED", flush=True)
     log_memory("before anything")
     # asyncio.create_task(listen_for_session_deletes())
     log_memory("after listener removed")

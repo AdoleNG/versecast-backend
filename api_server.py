@@ -100,18 +100,28 @@ PHRASE_DICT_FILE = "phrase_dictionary.json"
 # =========================================================
 # LOAD MATCH DATA (BLOCK 1 — USING load_verses_index)
 # =========================================================
-
+log_memory("before VERSES")
 VERSES = load_verses_index()
-KEYWORD_INDEX = load_json(KEYWORD_INDEX_FILE)
+log_memory("after VERSES")
 
+log_memory("before KEYWORD_INDEX")
+KEYWORD_INDEX = load_json(KEYWORD_INDEX_FILE)
+log_memory("after VERSES")
+log_memory("after KEYWORD_INDEX")
+
+log_memory("before phrase_entries")
 try:
     phrase_entries = load_json(PHRASE_DICT_FILE)
     if not isinstance(phrase_entries, list):
         phrase_entries = []
+        
 except FileNotFoundError:
     phrase_entries = []
+log_memory("after phrase_entries")
 
+log_memory("before PHRASE_LOOKUP")
 PHRASE_LOOKUP = build_phrase_lookup(phrase_entries)
+log_memory("after PHRASE_LOOKUP")
 
 # =========================================================
 # DISPLAY / WORKFLOW CONFIG

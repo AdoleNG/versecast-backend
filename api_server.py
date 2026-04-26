@@ -29,7 +29,7 @@ LISTENER_DATABASE_URL = os.getenv("LISTENER_DATABASE_URL")
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+
 
 from routers.onboarding import router as onboarding_router
 from routers.sessions import router as sessions_router

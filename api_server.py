@@ -30,7 +30,6 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-
 from routers.onboarding import router as onboarding_router
 from routers.sessions import router as sessions_router
 from routers.operators import router as operators_router
@@ -1730,16 +1729,6 @@ setInterval(refresh, 1500);
 """
 
     return HTMLResponse(html)
-
-
-# ================================================================
-# FAVICON ROUTE (must be outside control())
-# ================================================================
-from fastapi.responses import FileResponse
-
-@app.get("/favicon.ico")
-def favicon():
-    return FileResponse("static/favicon.ico")
 
 
 # ================================================================

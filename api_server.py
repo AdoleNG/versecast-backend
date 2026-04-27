@@ -29,6 +29,7 @@ LISTENER_DATABASE_URL = os.getenv("LISTENER_DATABASE_URL")
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from routers.onboarding import router as onboarding_router
 from routers.sessions import router as sessions_router
@@ -48,6 +49,7 @@ from datetime import datetime, timedelta
 import asyncio
 import asyncpg
 import requests
+
 from core.websocket import broadcast_to_church   # or wherever this lives
 import math
 from datetime import datetime, timezone 
@@ -1217,6 +1219,13 @@ def control_live(auth_user=Depends(get_current_auth_user)):
     sid = session["id"]
     return RedirectResponse(url=f"/control/{sid}", status_code=307)
 
+@app.get("/audio-worklet-processor.js")
+async def audio_worklet_processor():
+    return FileResponse(
+        "audio-worklet-processor.js",
+        media_type="application/javascript"
+    )
+
 
 @app.get("/presenter/live")
 def presenter_live(auth_user=Depends(get_current_auth_user)):
@@ -1549,7 +1558,9 @@ console.log("STT usage tracking started:", activeUsageId);
   mediaStream = await navigator.mediaDevices.getUserMedia({{ audio: true }});
   audioContext = new AudioContext({{ sampleRate: 48000 }});
 
-  await audioContext.audioWorklet.addModule("https://www.versecast.ca/audio-worklet-processor.js");
+  await audioContext.audioWorklet.addModule(
+  `${window.location.origin}/audio-worklet-processor.js`
+);
 
   const source = audioContext.createMediaStreamSource(mediaStream);
   workletNode = new AudioWorkletNode(audioContext, "versecast-processor");

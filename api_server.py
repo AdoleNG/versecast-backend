@@ -1558,9 +1558,7 @@ console.log("STT usage tracking started:", activeUsageId);
   mediaStream = await navigator.mediaDevices.getUserMedia({{ audio: true }});
   audioContext = new AudioContext({{ sampleRate: 48000 }});
 
-  await audioContext.audioWorklet.addModule(
-  `${window.location.origin}/audio-worklet-processor.js`
-);
+  await audioContext.audioWorklet.addModule("/audio-worklet-processor.js");
 
   const source = audioContext.createMediaStreamSource(mediaStream);
   workletNode = new AudioWorkletNode(audioContext, "versecast-processor");

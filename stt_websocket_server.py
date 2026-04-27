@@ -216,16 +216,26 @@ async def stt_stream(ws: WebSocket):
             post_ingest(session_id, text, is_final=False)
 
     def on_recognized(evt):
-        if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
-            text = normalize(evt.result.text)
-            if text:
-                print(f"[FINAL] {text}", flush=True)
+    print(f"[RECOGNIZED RAW REASON] {evt.result.reason}", flush=True)
+    print(f"[RECOGNIZED RAW TEXT] {repr(evt.result.text)}", flush=True)
 
-                # Send to /ingest (existing behavior)
-                post_ingest(session_id, text, is_final=True)
+    if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        text = normalize(evt.result.text)
 
-                # Send FINAL transcript to /match
-                post_match(session_id, text)
+        if text:
+            print(f"[FINAL] {text}", flush=True)
+
+            # Send to /ingest
+            post_ingest(session_id, text, is_final=True)
+
+            # Send FINAL transcript to /match
+            post_match(session_id, text)
+
+    elif evt.result.reason == speechsdk.ResultReason.NoMatch:
+        print("[FINAL NO MATCH]", evt.result.no_match_details, flush=True)
+
+    elif evt.result.reason == speechsdk.ResultReason.Canceled:
+        print("[FINAL CANCELED]", evt.result.cancellation_details, flush=True)
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)

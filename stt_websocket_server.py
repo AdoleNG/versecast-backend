@@ -216,8 +216,8 @@ async def stt_stream(ws: WebSocket):
             post_ingest(session_id, text, is_final=False)
 
     def on_recognized(evt):
-    print(f"[RECOGNIZED RAW REASON] {evt.result.reason}", flush=True)
-    print(f"[RECOGNIZED RAW TEXT] {repr(evt.result.text)}", flush=True)
+        print(f"[RECOGNIZED RAW REASON] {evt.result.reason}", flush=True)
+        print(f"[RECOGNIZED RAW TEXT] {repr(evt.result.text)}", flush=True)
 
     if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
         text = normalize(evt.result.text)

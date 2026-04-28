@@ -272,6 +272,7 @@ async def stt_stream(ws: WebSocket):
     print("[AZURE] starting recognizer...", flush=True)
 
     recognizer.start_continuous_recognition_async().get()
+    await asyncio.sleep(0.2)  # stabilize pipeline
 
     print("[AZURE] recognizer start returned OK", flush=True)
     
@@ -295,7 +296,7 @@ async def stt_stream(ws: WebSocket):
                     audio_count += 1
                     if audio_count % 100 == 0:
                         print(
-                            f"[AUDIO BYTES RECEIVED] chunks={audio_count}, size={len(chunk)}",
+                            f"[AUDIO STREAM ACTIVE] chunks={audio_count}, size={len(chunk)}",
                             flush=True,
                         )
 

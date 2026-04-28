@@ -238,6 +238,23 @@ async def stt_stream(ws: WebSocket):
 
         if evt.reason == speechsdk.CancellationReason.Error:
             print("[CANCELED ERROR]", evt.error_details, flush=True)
+    
+    def on_session_started(evt):
+        print("[AZURE SESSION STARTED]", evt, flush=True)
+
+    def on_session_stopped(evt):
+        print("[AZURE SESSION STOPPED]", evt, flush=True)
+
+    def on_speech_start_detected(evt):
+        print("[AZURE SPEECH START DETECTED]", evt, flush=True)
+
+    def on_speech_end_detected(evt):
+        print("[AZURE SPEECH END DETECTED]", evt, flush=True)
+
+    recognizer.session_started.connect(on_session_started)
+    recognizer.session_stopped.connect(on_session_stopped)
+    recognizer.speech_start_detected.connect(on_speech_start_detected)
+    recognizer.speech_end_detected.connect(on_speech_end_detected)
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)

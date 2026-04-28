@@ -245,9 +245,11 @@ async def stt_stream(ws: WebSocket):
 
     
 
-    # =====================================================
+       # =====================================================
     # RECEIVE AUDIO / CONTROL MESSAGES
     # =====================================================
+    audio_count = 0
+
     try:
         while True:
             msg = await ws.receive()
@@ -258,8 +260,15 @@ async def stt_stream(ws: WebSocket):
             if msg["type"] == "websocket.receive":
                 if msg.get("bytes") is not None:
                     chunk = msg["bytes"]
-                    print(f"[AUDIO BYTES RECEIVED] {len(chunk)}", flush=True)
-                    stream.write(msg["bytes"])
+
+                    audio_count += 1
+                    if audio_count % 100 == 0:
+                        print(
+                            f"[AUDIO BYTES RECEIVED] chunks={audio_count}, size={len(chunk)}",
+                            flush=True,
+                        )
+
+                    stream.write(chunk)
 
                 elif msg.get("text") is not None:
                     try:
@@ -267,13 +276,16 @@ async def stt_stream(ws: WebSocket):
                         if data.get("type") == "stop":
                             break
                     except Exception as e:
-                        print("[WS ERROR] Failed to parse text control message:", repr(e), flush=True)
+                        print(
+                            "[WS ERROR] Failed to parse text control message:",
+                            repr(e),
+                            flush=True,
+                        )
 
     except WebSocketDisconnect:
         pass
     except Exception as e:
         print("[WS ERROR] WebSocket loop error:", repr(e), flush=True)
-
     # =====================================================
     # CLEANUP
     # =====================================================

@@ -2,6 +2,7 @@ print("LOADING STT SERVER...", flush=True)
 
 import os
 import json
+import asyncio
 from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect

@@ -205,44 +205,41 @@ async def stt_stream(ws: WebSocket):
         audio_config=audio_config,
     )
 
-    # =====================================================
+      # =====================================================
     # EVENT HANDLERS
     # =====================================================
+
+    def on_recognizing(evt):
+        text = normalize(evt.result.text)
+
+        if text:
+            print(f"[PARTIAL] {text}", flush=True)
+            post_ingest(session_id, text, is_final=False)
 
     def on_recognized(evt):
         print(f"[RECOGNIZED RAW REASON] {evt.result.reason}", flush=True)
         print(f"[RECOGNIZED RAW TEXT] {repr(evt.result.text)}", flush=True)
 
-    if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
-        text = normalize(evt.result.text)
+        if evt.result.reason == speechsdk.ResultReason.RecognizedSpeech:
+            text = normalize(evt.result.text)
 
-        if text:
-            print(f"[FINAL] {text}", flush=True)
+            if text:
+                print(f"[FINAL] {text}", flush=True)
 
-            # Send to /ingest
-            post_ingest(session_id, text, is_final=True)
+                # Send to /ingest
+                post_ingest(session_id, text, is_final=True)
 
-            # Send FINAL transcript to /match
-            post_match(session_id, text)
+                # Send FINAL transcript to /match
+                post_match(session_id, text)
 
-    elif evt.result.reason == speechsdk.ResultReason.NoMatch:
-        print("[FINAL NO MATCH]", evt.result.no_match_details, flush=True)
+        elif evt.result.reason == speechsdk.ResultReason.NoMatch:
+            print("[FINAL NO MATCH]", evt.result.no_match_details, flush=True)
 
-    elif evt.result.reason == speechsdk.ResultReason.Canceled:
-        print("[FINAL CANCELED]", evt.result.cancellation_details, flush=True)
+        elif evt.result.reason == speechsdk.ResultReason.Canceled:
+            print("[FINAL CANCELED]", evt.result.cancellation_details, flush=True)
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)
-
-    try:
-        recognizer.start_continuous_recognition_async().get()
-    except Exception as e:
-        print("[WS ERROR] Failed to start Azure recognizer:", repr(e), flush=True)
-        try:
-            await ws.close()
-        except Exception:
-            pass
-        return
 
     # =====================================================
     # RECEIVE AUDIO / CONTROL MESSAGES

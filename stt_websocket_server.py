@@ -209,12 +209,6 @@ async def stt_stream(ws: WebSocket):
     # EVENT HANDLERS
     # =====================================================
 
-    def on_recognizing(evt):
-        text = normalize(evt.result.text)
-        if text:
-            print(f"[PARTIAL] {text}", flush=True)
-            post_ingest(session_id, text, is_final=False)
-
     def on_recognized(evt):
         print(f"[RECOGNIZED RAW REASON] {evt.result.reason}", flush=True)
         print(f"[RECOGNIZED RAW TEXT] {repr(evt.result.text)}", flush=True)

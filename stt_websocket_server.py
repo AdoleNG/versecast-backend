@@ -207,7 +207,7 @@ async def stt_stream(ws: WebSocket):
         audio_config=audio_config,
     )
 
-      # =====================================================
+     # =====================================================
     # EVENT HANDLERS
     # =====================================================
 
@@ -227,21 +227,23 @@ async def stt_stream(ws: WebSocket):
 
             if text:
                 print(f"[FINAL] {text}", flush=True)
-
-                # Send to /ingest
                 post_ingest(session_id, text, is_final=True)
-
-                # Send FINAL transcript to /match
                 post_match(session_id, text)
 
         elif evt.result.reason == speechsdk.ResultReason.NoMatch:
             print("[FINAL NO MATCH]", evt.result.no_match_details, flush=True)
 
-        elif evt.result.reason == speechsdk.ResultReason.Canceled:
-            print("[FINAL CANCELED]", evt.result.cancellation_details, flush=True)
+    def on_canceled(evt):
+        print("[CANCELED]", evt.reason, flush=True)
+
+        if evt.reason == speechsdk.CancellationReason.Error:
+            print("[CANCELED ERROR]", evt.error_details, flush=True)
 
     recognizer.recognizing.connect(on_recognizing)
     recognizer.recognized.connect(on_recognized)
+    recognizer.canceled.connect(on_canceled)
+
+    
 
     # =====================================================
     # RECEIVE AUDIO / CONTROL MESSAGES

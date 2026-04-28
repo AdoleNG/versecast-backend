@@ -260,9 +260,14 @@ async def stt_stream(ws: WebSocket):
     recognizer.recognized.connect(on_recognized)
     recognizer.canceled.connect(on_canceled)
 
+    print("[AZURE] starting recognizer...", flush=True)
+
+    recognizer.start_continuous_recognition_async().get()
+
+    print("[AZURE] recognizer start returned OK", flush=True)
     
 
-       # =====================================================
+    # =====================================================
     # RECEIVE AUDIO / CONTROL MESSAGES
     # =====================================================
     audio_count = 0

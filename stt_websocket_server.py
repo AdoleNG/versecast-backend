@@ -82,7 +82,7 @@ def post_match(session_id: str, text: str) -> bool:
         "text": text,
     }
     print(f"[MATCH CALL] sending: {text}", flush=True)
-    
+
     try:
         r = requests.post(MATCH_URL, json=payload, timeout=HTTP_TIMEOUT)
         print("[MATCH] POST /match:", r.status_code, r.text, flush=True)
@@ -255,6 +255,8 @@ async def stt_stream(ws: WebSocket):
 
             if msg["type"] == "websocket.receive":
                 if msg.get("bytes") is not None:
+                    chunk = msg["bytes"]
+                    print(f"[AUDIO BYTES RECEIVED] {len(chunk)}", flush=True)
                     stream.write(msg["bytes"])
 
                 elif msg.get("text") is not None:

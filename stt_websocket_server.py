@@ -199,8 +199,12 @@ async def stt_stream(ws: WebSocket):
     )
     speech_config.speech_recognition_language = LANGUAGE
 
-    stream = speechsdk.audio.PushAudioInputStream()
-    audio_config = speechsdk.audio.AudioConfig(stream=stream)
+
+    audio_format = speechsdk.audio.AudioStreamFormat(
+        samples_per_second=48000,
+        bits_per_sample=16,
+        channels=1,
+    )
 
     recognizer = speechsdk.SpeechRecognizer(
         speech_config=speech_config,

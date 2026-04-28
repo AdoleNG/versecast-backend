@@ -81,6 +81,8 @@ def post_match(session_id: str, text: str) -> bool:
         "session_id": session_id,
         "text": text,
     }
+    print(f"[MATCH CALL] sending: {text}", flush=True)
+    
     try:
         r = requests.post(MATCH_URL, json=payload, timeout=HTTP_TIMEOUT)
         print("[MATCH] POST /match:", r.status_code, r.text, flush=True)

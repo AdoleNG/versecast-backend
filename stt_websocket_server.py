@@ -278,47 +278,46 @@ async def stt_stream(ws: WebSocket):
     print("[AZURE] recognizer start returned OK", flush=True)
     
 
-    # =====================================================
-    # RECEIVE AUDIO / CONTROL MESSAGES
-    # =====================================================
-    audio_count = 0
+# =====================================================
+# RECEIVE AUDIO / CONTROL MESSAGES
+# =====================================================
+audio_count = 0
 
-    try:
-        while True:
-            msg = await ws.receive()
+try:
+    while True:
+        msg = await ws.receive()
 
-            if msg["type"] == "websocket.disconnect":
-                break
+        if msg["type"] == "websocket.disconnect":
+            break
 
-            if msg["type"] == "websocket.receive":
-                if msg.get("bytes") is not None:
-                    chunk = msg["bytes"]
+        if msg["type"] == "websocket.receive":
+            if msg.get("bytes") is not None:
+                chunk = msg["bytes"]
 
-                    audio_count += 1
-                    if audio_count % 100 == 0:
-                        print(
-                            f"[AUDIO STREAM ACTIVE] chunks={audio_count}, size={len(chunk)}",
-                            flush=True,
-                        )
+                audio_count += 1
 
-                    stream.write(chunk)
+                if audio_count == 100:
+                    print("[AUDIO STREAM ACTIVE]", flush=True)
 
-                elif msg.get("text") is not None:
-                    try:
-                        data = json.loads(msg["text"])
-                        if data.get("type") == "stop":
-                            break
-                    except Exception as e:
-                        print(
-                            "[WS ERROR] Failed to parse text control message:",
-                            repr(e),
-                            flush=True,
-                        )
+                stream.write(chunk)
 
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        print("[WS ERROR] WebSocket loop error:", repr(e), flush=True)
+            elif msg.get("text") is not None:
+                try:
+                    data = json.loads(msg["text"])
+                    if data.get("type") == "stop":
+                        break
+                except Exception as e:
+                    print(
+                        "[WS ERROR] Failed to parse text control message:",
+                        repr(e),
+                        flush=True,
+                    )
+
+except WebSocketDisconnect:
+    pass
+except Exception as e:
+    print("[WS ERROR] WebSocket loop error:", repr(e), flush=True)
+    
     # =====================================================
     # CLEANUP
     # =====================================================

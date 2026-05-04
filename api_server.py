@@ -114,6 +114,7 @@ def get_verses():
         print("🔥 Loading VERSES...", flush=True)
         log_memory("before lazy VERSES load")
         VERSES = load_verses_index()
+        print("VERSES LOADED COUNT:", len(VERSES), flush=True)
         log_memory("after lazy VERSES load")
     return VERSES
 
@@ -819,7 +820,10 @@ def match_route(payload: Dict[str, Any]):
         import time
         start = time.time()
 
+        print("[MATCH_ROUTE] TEXT:", repr(text), flush=True)
         r = match_text(text)
+        print("[MATCH_ROUTE] RESULT:", json.dumps(r, default=str)[:500], flush=True)
+
         # -----------------------------------------
         # END TIMER
         # -----------------------------------------

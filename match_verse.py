@@ -753,8 +753,8 @@ def match_scripture(user_text: str,
     debug_log("RAW:", repr(user_text))
     debug_log("CLEANED:", repr(cleaned_input))
 
-    reference_ready = strip_reference_leadin(cleaned_input)
-    ref = parse_reference(reference_ready)
+    
+    ref = parse_reference(cleaned_input)
     debug_log("PARSE_REF:", ref)
 
     if ref:

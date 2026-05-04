@@ -535,17 +535,20 @@ def match_scripture(user_text: str,
     debug_log("PARSED_REF:", ref)
 
     if ref:
+        # -----------------------------
+        # SINGLE VERSE
+        # -----------------------------
         if ref["type"] == "single":
             book = ref["book"]
             ch = ref["chapter"]
             v = ref["verse"]
-            vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+            vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
             verse = verses_index.get(vid)
+
             if verse:
                 return {
                     "mode": "reference",
                     "best": {
-                        "verse_id": vid,
                         "reference": verse.get("reference"),
                         "text_kjv": verse.get("text_kjv"),
                     },
@@ -553,25 +556,38 @@ def match_scripture(user_text: str,
                     "normalized_input": cleaned_input,
                 }
 
+        # -----------------------------
+        # RANGE OF VERSES
+        # -----------------------------
         elif ref["type"] == "range":
             book = ref["book"]
             ch = ref["chapter"]
             v_start = ref["start"]
             v_end = ref["end"]
+
             vids = []
             for v in range(v_start, v_end + 1):
-                vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+                vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
                 if vid in verses_index:
                     vids.append(vid)
+
             if vids:
+                if v_start == v_end:
+                    ref_str = f"{book} {ch}:{v_start}"
+                else:
+                    ref_str = f"{book} {ch}:{v_start}-{v_end}"
+
+                combined_text = ""
+                for vid in vids:
+                    verse = verses_index.get(vid)
+                    if verse:
+                        combined_text += f"{verse.get('reference')} {verse.get('text_kjv')}\n"
+
                 return {
                     "mode": "reference_range",
                     "best": {
-                        "book": book,
-                        "chapter": ch,
-                        "start": v_start,
-                        "end": v_end,
-                        "verse_ids": vids,
+                        "reference": ref_str,
+                        "text_kjv": combined_text.strip(),
                     },
                     "raw_input": user_text,
                     "normalized_input": cleaned_input,
@@ -583,13 +599,13 @@ def match_scripture(user_text: str,
     if implicit:
         book, ch, v = implicit
         if book:
-            vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+            vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
             verse = verses_index.get(vid)
+
             if verse:
                 return {
                     "mode": "reference",
                     "best": {
-                        "verse_id": vid,
                         "reference": verse.get("reference"),
                         "text_kjv": verse.get("text_kjv"),
                     },
@@ -600,15 +616,16 @@ def match_scripture(user_text: str,
     # 3) Phrase match
     phrase_result = phrase_match(cleaned_input, phrase_lookup)
     debug_log("PHRASE_RESULT:", phrase_result)
+
     if phrase_result:
         vid = phrase_result["verse_id"]
         verse = verses_index.get(vid)
+
         if verse:
             return {
                 "mode": "phrase",
                 "confidence": phrase_result["confidence"],
                 "best": {
-                    "verse_id": vid,
                     "reference": verse.get("reference"),
                     "text_kjv": verse.get("text_kjv"),
                 },
@@ -619,15 +636,16 @@ def match_scripture(user_text: str,
     # 4) Text similarity
     sim = match_text_to_reference(cleaned_input, verses_index)
     debug_log("SIMILARITY_RESULT:", sim)
+
     if sim:
         vid = sim["verse_id"]
         verse = verses_index.get(vid)
+
         if verse:
             return {
                 "mode": "similarity",
                 "confidence": sim["score"],
                 "best": {
-                    "verse_id": vid,
                     "reference": verse.get("reference"),
                     "text_kjv": verse.get("text_kjv"),
                 },
@@ -638,6 +656,7 @@ def match_scripture(user_text: str,
     # 5) Keyword mode
     tokens = tokenize(cleaned_input)
     quote_like = is_quote_like(cleaned_input, tokens)
+
     debug_log("TOKENS:", tokens, "QUOTE_LIKE:", quote_like)
 
     if not quote_like:
@@ -651,6 +670,7 @@ def match_scripture(user_text: str,
         }
 
     best_kw, suggestions_kw = keyword_match(tokens, verses_index, keyword_index)
+
     debug_log("KEYWORD_BEST:", best_kw)
     debug_log("KEYWORD_SUGGESTIONS:", suggestions_kw)
 

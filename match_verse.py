@@ -443,82 +443,113 @@ def replace_spoken_numbers(s: str) -> str:
 
     return _NUMWORD_RE.sub(repl, s)
 
-def parse_reference(user_text: str) -> Optional[RefParsed]:
-    t = clean_for_reference(user_text)
-    t = replace_spoken_numbers(t)
-    t = t.replace("–", "-").replace("—", "-")
-    t = re.sub(r"[.,;!?()]", " ", t)
-    t = re.sub(r"\s+", " ", t).strip()
+def parse_reference(text: str):
+    """
+    Universal reference extractor:
+    - Finds a book name using BOOK_PATTERN / BOOK_ALIASES
+    - Then finds numbers after the book
+    - Interprets first as chapter, second as verse, optional third as verse_end
+    - Still supports explicit patterns like 'John 3:16-18', 'John 3:16', 'John 317'
+    """
+    raw = text or ""
+    t = normalize_text(raw)
 
-    alias_keys = sorted(BOOK_ALIASES.keys(), key=len, reverse=True)
-    alias_pattern = r"\b(" + "|".join(re.escape(k) for k in alias_keys) + r")\b"
+    # 1) Try explicit colon range: John 3:16-18
+    m = re.search(
+        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\s*[-–]\s*(\d+)\b",
+        raw,
+        re.IGNORECASE,
+    )
+    if m:
+        return {
+            "type": "range",
+            "book": normalize_book(m.group(1)),
+            "chapter": int(m.group(2)),
+            "start": int(m.group(3)),
+            "end": int(m.group(4)),
+        }
 
-    for m_book in re.finditer(alias_pattern, t, flags=re.IGNORECASE):
-        raw_book = m_book.group(1)
-        book = normalize_book_name(raw_book)
-        if not book:
-            continue
+    # 2) Try explicit colon single: John 3:16
+    m = re.search(
+        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\b",
+        raw,
+        re.IGNORECASE,
+    )
+    if m:
+        return {
+            "type": "single",
+            "book": normalize_book(m.group(1)),
+            "chapter": int(m.group(2)),
+            "verse": int(m.group(3)),
+        }
 
-        tail = t[m_book.end():].strip()
-        if not tail:
-            continue
+    # 3) Try compressed numeric like 'John 317' → John 3:17
+    m = re.search(
+        rf"\b({BOOK_PATTERN})\s+(\d{{3,5}})\b",
+        t,
+        re.IGNORECASE,
+    )
+    if m:
+        book = normalize_book(m.group(1))
+        digits = m.group(2)
+        if len(digits) == 3:
+            ch = int(digits[0])
+            vs = int(digits[1:])
+        elif len(digits) == 4:
+            ch = int(digits[:2])
+            vs = int(digits[2:])
+        else:  # len == 5
+            ch = int(digits[:3])
+            vs = int(digits[3:])
+        return {
+            "type": "single",
+            "book": book,
+            "chapter": ch,
+            "verse": vs,
+        }
 
-        tail_norm = tail.lower()
-        tail_norm = re.sub(r"\bchapter\b", " ", tail_norm)
-        tail_norm = re.sub(r"\bverses?\b", " :", tail_norm)
-        tail_norm = re.sub(r"\bvs\b", " :", tail_norm)
-        tail_norm = re.sub(r"\bv\b", " :", tail_norm)
-        tail_norm = re.sub(r"\bto\b", "-", tail_norm)
-        tail_norm = re.sub(r"\bthrough\b", "-", tail_norm)
-        tail_norm = re.sub(r"\s*-\s*", "-", tail_norm)
-        tail_norm = re.sub(r"\s*:\s*", " : ", tail_norm)
-        tail_norm = re.sub(r"\s+", " ", tail_norm).strip()
+    # 4) Universal fallback: book + numbers (STT‑friendly)
+    #    Example inputs:
+    #      "Genesis chapter 5 reading from verse 10"
+    #      "Let's read Genesis 5 from verse 10"
+    #      "We are in Genesis 5 verse 10 to 12"
+    #      "Genesis 5 10"
+    m = re.search(rf"\b({BOOK_PATTERN})\b", t, re.IGNORECASE)
+    if not m:
+        return None
 
-        m = re.match(r"^(\d+)\s*:\s*(\d+)-(\d+)\b", tail_norm)
-        if m:
-            ch, v1, v2 = map(int, m.groups())
-            if ch > 0 and v1 > 0 and v2 >= v1:
-                return (book, ch, v1, v2)
+    book = normalize_book(m.group(1))
+    tail = t[m.end():]  # everything after the book name
 
-        m = re.match(r"^(\d+)\s+:\s+(\d+)-(\d+)\b", tail_norm)
-        if m:
-            ch, v1, v2 = map(int, m.groups())
-            if ch > 0 and v1 > 0 and v2 >= v1:
-                return (book, ch, v1, v2)
+    # Extract all numbers after the book, in order
+    nums = re.findall(r"\d+", tail)
+    if len(nums) < 2:
+        # Not enough numeric signal to form chapter + verse
+        return None
 
-        m = re.match(r"^(\d+)\s+(\d+)-(\d+)\b", tail_norm)
-        if m:
-            ch, v1, v2 = map(int, m.groups())
-            if ch > 0 and v1 > 0 and v2 >= v1:
-                return (book, ch, v1, v2)
+    chapter = int(nums[0])
+    verse_start = int(nums[1])
+    verse_end = None
 
-        m = re.match(r"^(\d+)\s*:\s*(\d+)\b", tail_norm)
-        if m:
-            ch, v1 = map(int, m.groups())
-            if ch > 0 and v1 > 0:
-                return (book, ch, v1)
+    if len(nums) >= 3:
+        verse_end = int(nums[2])
 
-        m = re.match(r"^(\d+)\s+:\s+(\d+)\b", tail_norm)
-        if m:
-            ch, v1 = map(int, m.groups())
-            if ch > 0 and v1 > 0:
-                return (book, ch, v1)
+    if verse_end and verse_end > verse_start:
+        return {
+            "type": "range",
+            "book": book,
+            "chapter": chapter,
+            "start": verse_start,
+            "end": verse_end,
+        }
 
-        m = re.match(r"^(\d+)\s+(\d+)\b", tail_norm)
-        if m:
-            ch, v1 = map(int, m.groups())
-            if ch > 0 and v1 > 0:
-                return (book, ch, v1)
+    return {
+        "type": "single",
+        "book": book,
+        "chapter": chapter,
+        "verse": verse_start,
+    }
 
-        m = re.match(r"^(\d{3,5})\b", tail_norm)
-        if m:
-            digits = m.group(1)
-            ch = int(digits[:-2])
-            v1 = int(digits[-2:])
-            if ch > 0 and v1 > 0:
-                return (book, ch, v1)
-
-    return None
 
 def build_range_verse_ids(book: str, chapter: int, v_start: int, v_end: int) -> List[str]:
     MAX_RANGE = 15

@@ -535,13 +535,15 @@ def match_scripture(user_text: str,
     debug_log("PARSED_REF:", ref)
 
     if ref:
-        # -----------------------------
+
+        # ------------------------------------------------------
         # SINGLE VERSE
-        # -----------------------------
+        # ------------------------------------------------------
         if ref["type"] == "single":
             book = ref["book"]
             ch = ref["chapter"]
             v = ref["verse"]
+
             vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
             verse = verses_index.get(vid)
 
@@ -556,52 +558,52 @@ def match_scripture(user_text: str,
                     "normalized_input": cleaned_input,
                 }
 
-        # -----------------------------
+        # ------------------------------------------------------
         # RANGE OF VERSES
-        # -----------------------------
-    elif ref["type"] == "range":
-        book = ref["book"]
-    ch = ref["chapter"]
-    v_start = ref["start"]
-    v_end = ref["end"]
+        # ------------------------------------------------------
+        elif ref["type"] == "range":
+            book = ref["book"]
+            ch = ref["chapter"]
+            v_start = ref["start"]
+            v_end = ref["end"]
 
-    vids = []
-    for v in range(v_start, v_end + 1):
-        vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
-        if vid in verses_index:
-            vids.append(vid)
+            vids = []
+            for v in range(v_start, v_end + 1):
+                vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
+                if vid in verses_index:
+                    vids.append(vid)
 
-    if vids:
-        # Build reference string
-        if v_start == v_end:
-            ref_str = f"{book} {ch}:{v_start}"
-        else:
-            ref_str = f"{book} {ch}:{v_start}-{v_end}"
+            if vids:
 
-        # Build combined text with ONLY verse numbers
-        combined_text = ""
-        for vid in vids:
-            verse = verses_index.get(vid)
-            if verse:
-                # Extract verse number from "Book Chapter:Verse"
-                ref_full = verse.get("reference")  # e.g. "2 Samuel 3:5"
-                verse_num = ref_full.split(":")[1]  # "5"
-                combined_text += f"{verse_num}. {verse.get('text_kjv')}\n\n"
+                if v_start == v_end:
+                    ref_str = f"{book} {ch}:{v_start}"
+                else:
+                    ref_str = f"{book} {ch}:{v_start}-{v_end}"
 
-        return {
-            "mode": "reference_range",
-            "best": {
-                "reference": ref_str,
-                "text_kjv": combined_text.strip(),
-            },
-            "raw_input": user_text,
-            "normalized_input": cleaned_input,
-        }
+                combined_text = ""
+                for vid in vids:
+                    verse = verses_index.get(vid)
+                    if verse:
+                        ref_full = verse.get("reference")
+                        verse_num = ref_full.split(":")[1] if ref_full and ":" in ref_full else ""
+                        combined_text += f"{verse_num}. {verse.get('text_kjv')}\n\n"
 
+                return {
+                    "mode": "reference_range",
+                    "best": {
+                        "reference": ref_str,
+                        "text_kjv": combined_text.strip(),
+                    },
+                    "raw_input": user_text,
+                    "normalized_input": cleaned_input,
+                }
 
+    # ------------------------------------------------------
     # 2) Implicit chapter rule
+    # ------------------------------------------------------
     implicit = apply_implicit_chapter_rule(reference_input)
     debug_log("IMPLICIT:", implicit)
+
     if implicit:
         book, ch, v = implicit
         if book:
@@ -619,7 +621,9 @@ def match_scripture(user_text: str,
                     "normalized_input": cleaned_input,
                 }
 
+    # ------------------------------------------------------
     # 3) Phrase match
+    # ------------------------------------------------------
     phrase_result = phrase_match(cleaned_input, phrase_lookup)
     debug_log("PHRASE_RESULT:", phrase_result)
 
@@ -639,7 +643,9 @@ def match_scripture(user_text: str,
                 "normalized_input": cleaned_input,
             }
 
+    # ------------------------------------------------------
     # 4) Text similarity
+    # ------------------------------------------------------
     sim = match_text_to_reference(cleaned_input, verses_index)
     debug_log("SIMILARITY_RESULT:", sim)
 
@@ -659,10 +665,11 @@ def match_scripture(user_text: str,
                 "normalized_input": cleaned_input,
             }
 
+    # ------------------------------------------------------
     # 5) Keyword mode
+    # ------------------------------------------------------
     tokens = tokenize(cleaned_input)
     quote_like = is_quote_like(cleaned_input, tokens)
-
     debug_log("TOKENS:", tokens, "QUOTE_LIKE:", quote_like)
 
     if not quote_like:
@@ -676,7 +683,6 @@ def match_scripture(user_text: str,
         }
 
     best_kw, suggestions_kw = keyword_match(tokens, verses_index, keyword_index)
-
     debug_log("KEYWORD_BEST:", best_kw)
     debug_log("KEYWORD_SUGGESTIONS:", suggestions_kw)
 

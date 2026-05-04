@@ -560,38 +560,44 @@ def match_scripture(user_text: str,
         # RANGE OF VERSES
         # -----------------------------
         elif ref["type"] == "range":
-            book = ref["book"]
-            ch = ref["chapter"]
-            v_start = ref["start"]
-            v_end = ref["end"]
+    book = ref["book"]
+    ch = ref["chapter"]
+    v_start = ref["start"]
+    v_end = ref["end"]
 
-            vids = []
-            for v in range(v_start, v_end + 1):
-                vid = f"{re.sub(r'[^A-Z0-9]+', '_', book.upper()).strip('_')}_{ch}_{v}"
-                if vid in verses_index:
-                    vids.append(vid)
+    vids = []
+    for v in range(v_start, v_end + 1):
+        vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+        if vid in verses_index:
+            vids.append(vid)
 
-            if vids:
-                if v_start == v_end:
-                    ref_str = f"{book} {ch}:{v_start}"
-                else:
-                    ref_str = f"{book} {ch}:{v_start}-{v_end}"
+    if vids:
+        # Build reference string
+        if v_start == v_end:
+            ref_str = f"{book} {ch}:{v_start}"
+        else:
+            ref_str = f"{book} {ch}:{v_start}-{v_end}"
 
-                combined_text = ""
-                for vid in vids:
-                    verse = verses_index.get(vid)
-                    if verse:
-                        combined_text += f"{verse.get('reference')} {verse.get('text_kjv')}\n"
+        # Build combined text with ONLY verse numbers
+        combined_text = ""
+        for vid in vids:
+            verse = verses_index.get(vid)
+            if verse:
+                # Extract verse number from "Book Chapter:Verse"
+                ref_full = verse.get("reference")  # e.g. "2 Samuel 3:5"
+                verse_num = ref_full.split(":")[1]  # "5"
+                combined_text += f"{verse_num}. {verse.get('text_kjv')}\n\n"
 
-                return {
-                    "mode": "reference_range",
-                    "best": {
-                        "reference": ref_str,
-                        "text_kjv": combined_text.strip(),
-                    },
-                    "raw_input": user_text,
-                    "normalized_input": cleaned_input,
-                }
+        return {
+            "mode": "reference_range",
+            "best": {
+                "reference": ref_str,
+                "text_kjv": combined_text.strip(),
+            },
+            "raw_input": user_text,
+            "normalized_input": cleaned_input,
+        }
+
 
     # 2) Implicit chapter rule
     implicit = apply_implicit_chapter_rule(reference_input)

@@ -559,8 +559,8 @@ def match_scripture(user_text: str,
         # -----------------------------
         # RANGE OF VERSES
         # -----------------------------
-        elif ref["type"] == "range":
-    book = ref["book"]
+    elif ref["type"] == "range":
+        book = ref["book"]
     ch = ref["chapter"]
     v_start = ref["start"]
     v_end = ref["end"]

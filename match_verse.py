@@ -17,6 +17,7 @@ def debug_log(*args):
 # ============================================================
 # File paths
 # ============================================================
+
 VERSES_FILE = "verses_index_enriched.json"
 FALLBACK_VERSES_FILE = "verses_index.json"
 KEYWORD_INDEX_FILE = "keyword_index.json"
@@ -25,601 +26,126 @@ PHRASE_DICT_FILE = "phrase_dictionary.json"
 # ============================================================
 # Matching thresholds
 # ============================================================
-PHRASE_CONFIDENCE = 0.98
 
+PHRASE_CONFIDENCE = 0.98
 KEYWORD_MIN_CONFIDENCE_TO_DISPLAY = 0.60
 KEYWORD_MIN_CONFIDENCE_TO_SUGGEST = 0.35
 TOP_K_SUGGESTIONS = 3
-
 MIN_TOKENS_FOR_KEYWORD_MODE = 4
 
 KJV_FINGERPRINT_TOKENS = {
-    "verily", "whosoever", "begotten", "thee", "thou", "thy", "ye",
-    "unto", "hath", "saith", "wherefore", "lest", "thereof", "therein"
+    "verily","whosoever","begotten","thee","thou","thy","ye",
+    "unto","hath","saith","wherefore","lest","thereof","therein"
 }
 
 # ============================================================
-# NEW: One-chapter books
+# One‑chapter books
 # ============================================================
+
 ONE_CHAPTER_BOOKS = {
-    "obadiah",
-    "philemon",
-    "2 john",
-    "3 john",
-    "jude",
+    "obadiah","philemon","2 john","3 john","jude"
 }
 
-# =========================================================
-# REFERENCE PARSING (WITH RANGE SUPPORT)
-# =========================================================
+# ============================================================
+# BOOK ALIASES + PATTERN
+# ============================================================
 
 BOOK_ALIASES = {
-    "genesis": "Genesis",
-    "gen": "Genesis",
-    "exodus": "Exodus",
-    "exo": "Exodus",
-    "exod": "Exodus",
-    "leviticus": "Leviticus",
-    "lev": "Leviticus",
-    "numbers": "Numbers",
-    "num": "Numbers",
-    "deuteronomy": "Deuteronomy",
-    "deut": "Deuteronomy",
-    "joshua": "Joshua",
-    "josh": "Joshua",
-    "judges": "Judges",
-    "judg": "Judges",
-    "ruth": "Ruth",
-    "1 samuel": "1 Samuel",
-    "first samuel": "1 Samuel",
-    "1st samuel": "1 Samuel",
-    "i samuel": "1 Samuel",
-    "2 samuel": "2 Samuel",
-    "second samuel": "2 Samuel",
-    "2nd samuel": "2 Samuel",
-    "ii samuel": "2 Samuel",
-    "1 kings": "1 Kings",
-    "first kings": "1 Kings",
-    "1st kings": "1 Kings",
-    "i kings": "1 Kings",
-    "2 kings": "2 Kings",
-    "second kings": "2 Kings",
-    "2nd kings": "2 Kings",
-    "ii kings": "2 Kings",
-    "1 chronicles": "1 Chronicles",
-    "first chronicles": "1 Chronicles",
-    "1st chronicles": "1 Chronicles",
-    "i chronicles": "1 Chronicles",
-    "2 chronicles": "2 Chronicles",
-    "second chronicles": "2 Chronicles",
-    "2nd chronicles": "2 Chronicles",
-    "ii chronicles": "2 Chronicles",
-    "ezra": "Ezra",
-    "nehemiah": "Nehemiah",
-    "neh": "Nehemiah",
-    "esther": "Esther",
-    "job": "Job",
-    "psalm": "Psalms",
-    "psalms": "Psalms",
-    "ps": "Psalms",
-    "proverbs": "Proverbs",
-    "prov": "Proverbs",
-    "ecclesiastes": "Ecclesiastes",
-    "eccl": "Ecclesiastes",
-    "song of solomon": "Song of Solomon",
-    "song of songs": "Song of Solomon",
-    "songs of solomon": "Song of Solomon",
-    "solomon": "Song of Solomon",
-    "isaiah": "Isaiah",
-    "isa": "Isaiah",
-    "jeremiah": "Jeremiah",
-    "jer": "Jeremiah",
-    "lamentations": "Lamentations",
-    "lam": "Lamentations",
-    "ezekiel": "Ezekiel",
-    "ezek": "Ezekiel",
-    "daniel": "Daniel",
-    "dan": "Daniel",
-    "hosea": "Hosea",
-    "joel": "Joel",
-    "amos": "Amos",
-    "obadiah": "Obadiah",
-    "obad": "Obadiah",
-    "jonah": "Jonah",
-    "micah": "Micah",
-    "nahum": "Nahum",
-    "habakkuk": "Habakkuk",
-    "hab": "Habakkuk",
-    "zephaniah": "Zephaniah",
-    "zeph": "Zephaniah",
-    "haggai": "Haggai",
-    "zechariah": "Zechariah",
-    "zech": "Zechariah",
-    "malachi": "Malachi",
-    "mal": "Malachi",
-    "matthew": "Matthew",
-    "matt": "Matthew",
-    "mark": "Mark",
-    "luke": "Luke",
-    "john": "John",
-    "acts": "Acts",
-    "romans": "Romans",
-    "rom": "Romans",
-    "romance": "Romans",
-    "1 corinthians": "1 Corinthians",
-    "1 cor": "1 Corinthians",
-    "first corinthians": "1 Corinthians",
-    "1st corinthians": "1 Corinthians",
-    "i corinthians": "1 Corinthians",
-    "2 corinthians": "2 Corinthians",
-    "2 cor": "2 Corinthians",
-    "second corinthians": "2 Corinthians",
-    "2nd corinthians": "2 Corinthians",
-    "ii corinthians": "2 Corinthians",
-    "galatians": "Galatians",
-    "gal": "Galatians",
-    "ephesians": "Ephesians",
-    "eph": "Ephesians",
-    "philippians": "Philippians",
-    "phil": "Philippians",
-    "colossians": "Colossians",
-    "col": "Colossians",
-    "1 thessalonians": "1 Thessalonians",
-    "first thessalonians": "1 Thessalonians",
-    "1st thessalonians": "1 Thessalonians",
-    "i thessalonians": "1 Thessalonians",
-    "2 thessalonians": "2 Thessalonians",
-    "second thessalonians": "2 Thessalonians",
-    "2nd thessalonians": "2 Thessalonians",
-    "ii thessalonians": "2 Thessalonians",
-    "1 timothy": "1 Timothy",
-    "first timothy": "1 Timothy",
-    "1st timothy": "1 Timothy",
-    "i timothy": "1 Timothy",
-    "2 timothy": "2 Timothy",
-    "second timothy": "2 Timothy",
-    "2nd timothy": "2 Timothy",
-    "ii timothy": "2 Timothy",
-    "titus": "Titus",
-    "philemon": "Philemon",
-    "hebrews": "Hebrews",
-    "heb": "Hebrews",
-    "james": "James",
-    "1 peter": "1 Peter",
-    "first peter": "1 Peter",
-    "1st peter": "1 Peter",
-    "i peter": "1 Peter",
-    "2 peter": "2 Peter",
-    "second peter": "2 Peter",
-    "2nd peter": "2 Peter",
-    "ii peter": "2 Peter",
-    "1 john": "1 John",
-    "first john": "1 John",
-    "1st john": "1 John",
-    "i john": "1 John",
-    "2 john": "2 John",
-    "second john": "2 John",
-    "2nd john": "2 John",
-    "ii john": "2 John",
-    "3 john": "3 John",
-    "third john": "3 John",
-    "3rd john": "3 John",
-    "iii john": "3 John",
-    "jude": "Jude",
-    "revelation": "Revelation",
-    "revelations": "Revelation",
-    "rev": "Revelation",
+    "genesis":"Genesis","gen":"Genesis",
+    "exodus":"Exodus","exo":"Exodus","exod":"Exodus",
+    "leviticus":"Leviticus","lev":"Leviticus",
+    "numbers":"Numbers","num":"Numbers",
+    "deuteronomy":"Deuteronomy","deut":"Deuteronomy",
+
+    "joshua":"Joshua","josh":"Joshua",
+    "judges":"Judges","judg":"Judges",
+    "ruth":"Ruth",
+
+    "1 samuel":"1 Samuel","first samuel":"1 Samuel","1st samuel":"1 Samuel","i samuel":"1 Samuel",
+    "2 samuel":"2 Samuel","second samuel":"2 Samuel","2nd samuel":"2 Samuel","ii samuel":"2 Samuel",
+
+    "1 kings":"1 Kings","first kings":"1 Kings","1st kings":"1 Kings","i kings":"1 Kings",
+    "2 kings":"2 Kings","second kings":"2 Kings","2nd kings":"2 Kings","ii kings":"2 Kings",
+
+    "1 chronicles":"1 Chronicles","first chronicles":"1 Chronicles","1st chronicles":"1 Chronicles","i chronicles":"1 Chronicles",
+    "2 chronicles":"2 Chronicles","second chronicles":"2 Chronicles","2nd chronicles":"2 Chronicles","ii chronicles":"2 Chronicles",
+
+    "ezra":"Ezra","nehemiah":"Nehemiah","neh":"Nehemiah","esther":"Esther",
+    "job":"Job","psalm":"Psalms","psalms":"Psalms","ps":"Psalms",
+    "proverbs":"Proverbs","prov":"Proverbs","ecclesiastes":"Ecclesiastes","eccl":"Ecclesiastes",
+    "song of solomon":"Song of Solomon","song of songs":"Song of Solomon","songs of solomon":"Song of Solomon","solomon":"Song of Solomon",
+
+    "isaiah":"Isaiah","isa":"Isaiah","jeremiah":"Jeremiah","jer":"Jeremiah",
+    "lamentations":"Lamentations","lam":"Lamentations","ezekiel":"Ezekiel","ezek":"Ezekiel",
+    "daniel":"Daniel","dan":"Daniel",
+
+    "hosea":"Hosea","joel":"Joel","amos":"Amos","obadiah":"Obadiah","obad":"Obadiah",
+    "jonah":"Jonah","micah":"Micah","nahum":"Nahum","habakkuk":"Habakkuk","hab":"Habakkuk",
+    "zephaniah":"Zephaniah","zeph":"Zephaniah","haggai":"Haggai","zechariah":"Zechariah","zech":"Zechariah",
+    "malachi":"Malachi","mal":"Malachi",
+
+    "matthew":"Matthew","matt":"Matthew","mark":"Mark","luke":"Luke","john":"John","acts":"Acts",
+
+    "romans":"Romans","rom":"Romans","romance":"Romans",
+    "1 corinthians":"1 Corinthians","1 cor":"1 Corinthians","first corinthians":"1 Corinthians","1st corinthians":"1 Corinthians","i corinthians":"1 Corinthians",
+    "2 corinthians":"2 Corinthians","2 cor":"2 Corinthians","second corinthians":"2 Corinthians","2nd corinthians":"2 Corinthians","ii corinthians":"2 Corinthians",
+
+    "galatians":"Galatians","gal":"Galatians","ephesians":"Ephesians","eph":"Ephesians",
+    "philippians":"Philippians","phil":"Philippians","colossians":"Colossians","col":"Colossians",
+
+    "1 thessalonians":"1 Thessalonians","first thessalonians":"1 Thessalonians","1st thessalonians":"1 Thessalonians","i thessalonians":"1 Thessalonians",
+    "2 thessalonians":"2 Thessalonians","second thessalonians":"2 Thessalonians","2nd thessalonians":"2 Thessalonians","ii thessalonians":"2 Thessalonians",
+
+    "1 timothy":"1 Timothy","first timothy":"1 Timothy","1st timothy":"1 Timothy","i timothy":"1 Timothy",
+    "2 timothy":"2 Timothy","second timothy":"2 Timothy","2nd timothy":"2 Timothy","ii timothy":"2 Timothy",
+
+    "titus":"Titus","philemon":"Philemon","hebrews":"Hebrews","heb":"Hebrews",
+    "james":"James","1 peter":"1 Peter","first peter":"1 Peter","1st peter":"1 Peter","i peter":"1 Peter",
+    "2 peter":"2 Peter","second peter":"2 Peter","2nd peter":"2 Peter","ii peter":"2 Peter",
+
+    "1 john":"1 John","first john":"1 John","1st john":"1 John","i john":"1 John",
+    "2 john":"2 John","second john":"2 John","2nd john":"2 John","ii john":"2 John",
+    "3 john":"3 John","third john":"3 John","3rd john":"3 John","iii john":"3 John",
+
+    "jude":"Jude","revelation":"Revelation","revelations":"Revelation","rev":"Revelation"
 }
 
 BOOK_PATTERN = "|".join(sorted(BOOK_ALIASES.keys(), key=len, reverse=True))
 
-
-def normalize_book(b: str) -> str:
-    return BOOK_ALIASES.get(b.lower().strip(), b.title())
-
-
-def verse_id(book: str, ch: int, v: int) -> str:
-    b = re.sub(r"[^A-Z0-9]+", "_", book.upper()).strip("_")
-    return f"{b}_{ch}_{v}"
-
-
-def parse_reference(text: str):
-    raw = text or ""
-    t = normalize_text(text or "")
-
-    # RANGE: John 3:16-18
-    m = re.search(
-        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\s*[-–]\s*(\d+)\b", raw, re.IGNORECASE
-    )
-    if m:
-        return {
-            "type": "range",
-            "book": normalize_book(m.group(1)),
-            "chapter": int(m.group(2)),
-            "start": int(m.group(3)),
-            "end": int(m.group(4)),
-        }
-
-    # RANGE: John chapter 3 reading from verse 16 to 18
-    m = re.search(
-        rf"\b({BOOK_PATTERN}).*?chapter\s+(\d+).*?(?:reading\s+from\s+)?verse\s+(\d+)\s*(?:to|-|–)\s*(\d+)\b",
-        t,
-        re.IGNORECASE,
-    )
-    if m:
-        return {
-            "type": "range",
-            "book": normalize_book(m.group(1)),
-            "chapter": int(m.group(2)),
-            "start": int(m.group(3)),
-            "end": int(m.group(4)),
-        }
-
-    # SINGLE: John chapter 3 reading from verse 16
-    m = re.search(
-        rf"\b({BOOK_PATTERN}).*?chapter\s+(\d+).*?(?:reading\s+from\s+)?verse\s+(\d+)\b",
-        t,
-        re.IGNORECASE,
-    )
-    if m:
-        return {
-            "type": "single",
-            "book": normalize_book(m.group(1)),
-            "chapter": int(m.group(2)),
-            "verse": int(m.group(3)),
-        }
-
-    # SINGLE: John 3:16
-    m = re.search(
-        rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\b", t, re.IGNORECASE
-    )
-    if m:
-        return {
-            "type": "single",
-            "book": normalize_book(m.group(1)),
-            "chapter": int(m.group(2)),
-            "verse": int(m.group(3)),
-        }
-
-    return None
-
 # ============================================================
-# Tokenization + normalization
+# Normalization helpers
 # ============================================================
-STOPWORDS = {
-    "the", "and", "of", "to", "in", "that", "a", "an", "for", "is", "it",
-    "as", "be", "with", "by", "this", "from", "or", "at", "was", "were",
-    "are", "but", "not", "into", "unto", "thou", "thee", "thy", "ye",
-    "you", "your", "yours",
-}
-
-TOKEN_RE = re.compile(r"[a-z0-9']+")
 
 def normalize_text(s: str) -> str:
     s = s.lower()
-    s = s.replace("’", "'").replace("`", "'")
-    s = s.replace("“", '"').replace("”", '"')
+    s = s.replace("’","'").replace("`","'")
+    s = s.replace("“",'"').replace("”",'"')
     s = s.replace("-", " ")
-    s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+"," ",s).strip()
     return s
-
-def tokenize(s: str) -> List[str]:
-    s = normalize_text(s)
-    tokens = TOKEN_RE.findall(s)
-
-    expanded: List[str] = []
-    for t in tokens:
-        expanded.append(t)
-        if t == "axe":
-            expanded.append("ax")
-        elif t == "ax":
-            expanded.append("axe")
-
-    return [t for t in expanded if t not in STOPWORDS and len(t) > 1]
-
-def is_quote_like(quote: str, tokens: List[str]) -> bool:
-    if any(t in KJV_FINGERPRINT_TOKENS for t in tokens):
-        return True
-    return len(tokens) >= MIN_TOKENS_FOR_KEYWORD_MODE
-
-# ============================================================
-# Loaders
-# ============================================================
-def load_json(path: str) -> Any:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def load_verses_index() -> Dict[str, Dict[str, Any]]:
-    try:
-        return load_json(VERSES_FILE)
-    except FileNotFoundError:
-        return load_json(FALLBACK_VERSES_FILE)
-
-# ============================================================
-# Reference parsing
-# ============================================================
-BOOK_ALIASES = {
-    "genesis": "Genesis",
-    "gen": "Genesis",
-    "exodus": "Exodus",
-    "exo": "Exodus",
-    "exod": "Exodus",
-    "leviticus": "Leviticus",
-    "lev": "Leviticus",
-    "numbers": "Numbers",
-    "num": "Numbers",
-    "deuteronomy": "Deuteronomy",
-    "deut": "Deuteronomy",
-
-    "joshua": "Joshua",
-    "josh": "Joshua",
-    "judges": "Judges",
-    "judg": "Judges",
-    "ruth": "Ruth",
-    "1 samuel": "1 Samuel",
-    "first samuel": "1 Samuel",
-    "1st samuel": "1 Samuel",
-    "i samuel": "1 Samuel",
-    "2 samuel": "2 Samuel",
-    "second samuel": "2 Samuel",
-    "2nd samuel": "2 Samuel",
-    "ii samuel": "2 Samuel",
-    "1 kings": "1 Kings",
-    "first kings": "1 Kings",
-    "1st kings": "1 Kings",
-    "i kings": "1 Kings",
-    "2 kings": "2 Kings",
-    "second kings": "2 Kings",
-    "2nd kings": "2 Kings",
-    "ii kings": "2 Kings",
-    "1 chronicles": "1 Chronicles",
-    "first chronicles": "1 Chronicles",
-    "1st chronicles": "1 Chronicles",
-    "i chronicles": "1 Chronicles",
-    "2 chronicles": "2 Chronicles",
-    "second chronicles": "2 Chronicles",
-    "2nd chronicles": "2 Chronicles",
-    "ii chronicles": "2 Chronicles",
-    "ezra": "Ezra",
-    "nehemiah": "Nehemiah",
-    "neh": "Nehemiah",
-    "esther": "Esther",
-
-    "job": "Job",
-    "psalm": "Psalms",
-    "psalms": "Psalms",
-    "ps": "Psalms",
-    "proverbs": "Proverbs",
-    "prov": "Proverbs",
-    "ecclesiastes": "Ecclesiastes",
-    "eccl": "Ecclesiastes",
-    "song of solomon": "Song of Solomon",
-    "song of songs": "Song of Solomon",
-    "songs of solomon": "Song of Solomon",
-    "solomon": "Song of Solomon",
-
-    "isaiah": "Isaiah",
-    "isa": "Isaiah",
-    "jeremiah": "Jeremiah",
-    "jer": "Jeremiah",
-    "lamentations": "Lamentations",
-    "lam": "Lamentations",
-    "ezekiel": "Ezekiel",
-    "ezek": "Ezekiel",
-    "daniel": "Daniel",
-    "dan": "Daniel",
-
-    "hosea": "Hosea",
-    "joel": "Joel",
-    "amos": "Amos",
-    "obadiah": "Obadiah",
-    "obad": "Obadiah",
-    "jonah": "Jonah",
-    "micah": "Micah",
-    "nahum": "Nahum",
-    "habakkuk": "Habakkuk",
-    "hab": "Habakkuk",
-    "zephaniah": "Zephaniah",
-    "zeph": "Zephaniah",
-    "haggai": "Haggai",
-    "zechariah": "Zechariah",
-    "zech": "Zechariah",
-    "malachi": "Malachi",
-    "mal": "Malachi",
-
-    "matthew": "Matthew",
-    "matt": "Matthew",
-    "mark": "Mark",
-    "luke": "Luke",
-    "john": "John",
-    "acts": "Acts",
-
-    "romans": "Romans",
-    "rom": "Romans",
-    "romance": "Romans",
-    "1 corinthians": "1 Corinthians",
-    "1 cor": "1 Corinthians",
-    "first corinthians": "1 Corinthians",
-    "1st corinthians": "1 Corinthians",
-    "i corinthians": "1 Corinthians",
-    "2 corinthians": "2 Corinthians",
-    "2 cor": "2 Corinthians",
-    "second corinthians": "2 Corinthians",
-    "2nd corinthians": "2 Corinthians",
-    "ii corinthians": "2 Corinthians",
-    "galatians": "Galatians",
-    "gal": "Galatians",
-    "ephesians": "Ephesians",
-    "eph": "Ephesians",
-    "philippians": "Philippians",
-    "phil": "Philippians",
-    "colossians": "Colossians",
-    "col": "Colossians",
-    "1 thessalonians": "1 Thessalonians",
-    "first thessalonians": "1 Thessalonians",
-    "1st thessalonians": "1 Thessalonians",
-    "i thessalonians": "1 Thessalonians",
-    "2 thessalonians": "2 Thessalonians",
-    "second thessalonians": "2 Thessalonians",
-    "2nd thessalonians": "2 Thessalonians",
-    "ii thessalonians": "2 Thessalonians",
-    "1 timothy": "1 Timothy",
-    "first timothy": "1 Timothy",
-    "1st timothy": "1 Timothy",
-    "i timothy": "1 Timothy",
-    "2 timothy": "2 Timothy",
-    "second timothy": "2 Timothy",
-    "2nd timothy": "2 Timothy",
-    "ii timothy": "2 Timothy",
-    "titus": "Titus",
-    "philemon": "Philemon",
-
-    "hebrews": "Hebrews",
-    "heb": "Hebrews",
-    "james": "James",
-    "1 peter": "1 Peter",
-    "first peter": "1 Peter",
-    "1st peter": "1 Peter",
-    "i peter": "1 Peter",
-    "2 peter": "2 Peter",
-    "second peter": "2 Peter",
-    "2nd peter": "2 Peter",
-    "ii peter": "2 Peter",
-    "1 john": "1 John",
-    "first john": "1 John",
-    "1st john": "1 John",
-    "i john": "1 John",
-    "2 john": "2 John",
-    "second john": "2 John",
-    "2nd john": "2 John",
-    "ii john": "2 John",
-    "3 john": "3 John",
-    "third john": "3 John",
-    "3rd john": "3 John",
-    "iii john": "3 John",
-    "jude": "Jude",
-
-    "revelation": "Revelation",
-    "revelations": "Revelation",
-    "rev": "Revelation",
-}
-
-ORDINAL_WORDS = {
-    "first": "1",
-    "second": "2",
-    "third": "3",
-    "1st": "1",
-    "2nd": "2",
-    "3rd": "3",
-}
-
-NUMBER_WORDS = {
-    "zero": 0,
-    "one": 1,
-    "two": 2,
-    "three": 3,
-    "four": 4,
-    "five": 5,
-    "six": 6,
-    "seven": 7,
-    "eight": 8,
-    "nine": 9,
-    "ten": 10,
-    "eleven": 11,
-    "twelve": 12,
-    "thirteen": 13,
-    "fourteen": 14,
-    "fifteen": 15,
-    "sixteen": 16,
-    "seventeen": 17,
-    "eighteen": 18,
-    "nineteen": 19,
-    "twenty": 20,
-    "thirty": 30,
-    "forty": 40,
-    "fifty": 50,
-    "sixty": 60,
-    "seventy": 70,
-    "eighty": 80,
-    "ninety": 90,
-    "hundred": 100,
-}
 
 def normalize_book_name(book_raw: str):
     if not book_raw:
         return None
-
     b = book_raw.lower().strip()
-    b = re.sub(r"[.,:;]", "", b)
-    b = re.sub(r"\bthe book of\s+", "", b)
-    b = re.sub(r"\bfirst\b", "1", b)
-    b = re.sub(r"\bsecond\b", "2", b)
-    b = re.sub(r"\bthird\b", "3", b)
-    b = re.sub(r"\b1st\b", "1", b)
-    b = re.sub(r"\b2nd\b", "2", b)
-    b = re.sub(r"\b3rd\b", "3", b)
-    b = re.sub(r"\biii\b", "3", b)
-    b = re.sub(r"\bii\b", "2", b)
-    b = re.sub(r"\bi\b", "1", b)
-    b = re.sub(r"\s+", " ", b).strip()
-
-    if b in BOOK_ALIASES:
-        return BOOK_ALIASES[b]
-
-    if b == "psalm":
-        return "Psalms"
-
-    return None
-
-def verse_id_from_reference(book: str, chapter: int, verse: int) -> str:
-    book_id = re.sub(r"[^A-Z0-9]+", "_", book.upper()).strip("_")
-    return f"{book_id}_{chapter}_{verse}"
-
-RefSingle = Tuple[str, int, int]
-RefRange = Tuple[str, int, int, int]
-RefParsed = Union[RefSingle, RefRange]
-
-# ============================================================
-# Reference helpers
-# ============================================================
-
-def strip_reference_leadin(s: str) -> str:
-    s = (s or "").lower()
-    s = s.replace("’", "'").replace("`", "'")
-    s = re.sub(r"[.,;!?]", " ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-
-    leadins = [
-        r"^(?:let us|let's)\s+read\s+",
-        r"^(?:we are|we're)\s+reading\s+from\s+",
-        r"^(?:i am|i'm)\s+reading\s+from\s+",
-        r"^reading\s+from\s+",
-        r"^read\s+from\s+",
-        r"^from\s+",
-        r"^(?:please\s+)?turn\s+to\s+",
-        r"^(?:please\s+)?open(?:\s+your\s+bibles?)?\s+to\s+",
-    ]
-
-    changed = True
-    while changed:
-        before = s
-        for pat in leadins:
-            s = re.sub(pat, "", s).strip()
-        changed = (s != before)
-
-    return s
-
-def clean_for_reference(s: str) -> str:
-    s = (s or "").lower()
-    s = s.replace("’", "'").replace("`", "'")
-    s = s.replace("“", '"').replace("”", '"')
-    s = re.sub(r"[^a-z0-9:\-\s]", " ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
+    b = re.sub(r"[.,:;]","",b)
+    b = re.sub(r"\bthe book of\s+","",b)
+    b = re.sub(r"\bfirst\b","1",b)
+    b = re.sub(r"\bsecond\b","2",b)
+    b = re.sub(r"\bthird\b","3",b)
+    b = re.sub(r"\b1st\b","1",b)
+    b = re.sub(r"\b2nd\b","2",b)
+    b = re.sub(r"\b3rd\b","3",b)
+    b = re.sub(r"\biii\b","3",b)
+    b = re.sub(r"\bii\b","2",b)
+    b = re.sub(r"\bi\b","1",b)
+    b = re.sub(r"\s+"," ",b).strip()
+    return BOOK_ALIASES.get(b)
 
 # ============================================================
 # Spoken numbers → digits
 # ============================================================
+
 _UNITS = {
     "zero":0,"one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,
     "eight":8,"nine":9,"ten":10,"eleven":11,"twelve":12,"thirteen":13,
@@ -635,12 +161,10 @@ _TENS = {
 def words_to_int(tokens: List[str]) -> Optional[int]:
     if not tokens:
         return None
-
     t = [x for x in tokens if x != "and"]
     total = 0
     current = 0
     consumed = 0
-
     for w in t:
         if w in _UNITS:
             current += _UNITS[w]
@@ -655,7 +179,6 @@ def words_to_int(tokens: List[str]) -> Optional[int]:
             consumed += 1
         else:
             return None
-
     total += current
     return total if consumed > 0 else None
 
@@ -674,57 +197,51 @@ def replace_spoken_numbers(s: str) -> str:
         toks = phrase.split()
         val = words_to_int(toks)
         return str(val) if val is not None else phrase
-
     return _NUMWORD_RE.sub(repl, s)
 
+# ============================================================
+# Universal reference parser
+# ============================================================
+
 def parse_reference(text: str):
-    """
-    Universal reference extractor:
-    - Finds a book name using BOOK_PATTERN / BOOK_ALIASES
-    - Then finds numbers after the book
-    - Interprets first as chapter, second as verse, optional third as verse_end
-    - Still supports explicit patterns like 'John 3:16-18', 'John 3:16', 'John 317'
-    """
     raw = text or ""
     t = normalize_text(raw)
+    t = replace_spoken_numbers(t)
 
-    # 1) Try explicit colon range: John 3:16-18
+    # 1) John 3:16-18
     m = re.search(
         rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\s*[-–]\s*(\d+)\b",
-        raw,
-        re.IGNORECASE,
+        raw, re.IGNORECASE
     )
     if m:
         return {
-            "type": "range",
-            "book": normalize_book(m.group(1)),
+            "type":"range",
+            "book": normalize_book_name(m.group(1)),
             "chapter": int(m.group(2)),
             "start": int(m.group(3)),
             "end": int(m.group(4)),
         }
 
-    # 2) Try explicit colon single: John 3:16
+    # 2) John 3:16
     m = re.search(
         rf"\b({BOOK_PATTERN})\s+(\d+):(\d+)\b",
-        raw,
-        re.IGNORECASE,
+        raw, re.IGNORECASE
     )
     if m:
         return {
-            "type": "single",
-            "book": normalize_book(m.group(1)),
+            "type":"single",
+            "book": normalize_book_name(m.group(1)),
             "chapter": int(m.group(2)),
             "verse": int(m.group(3)),
         }
 
-    # 3) Try compressed numeric like 'John 317' → John 3:17
+    # 3) John 317 → John 3:17
     m = re.search(
         rf"\b({BOOK_PATTERN})\s+(\d{{3,5}})\b",
-        t,
-        re.IGNORECASE,
+        t, re.IGNORECASE
     )
     if m:
-        book = normalize_book(m.group(1))
+        book = normalize_book_name(m.group(1))
         digits = m.group(2)
         if len(digits) == 3:
             ch = int(digits[0])
@@ -732,45 +249,35 @@ def parse_reference(text: str):
         elif len(digits) == 4:
             ch = int(digits[:2])
             vs = int(digits[2:])
-        else:  # len == 5
+        else:
             ch = int(digits[:3])
             vs = int(digits[3:])
         return {
-            "type": "single",
+            "type":"single",
             "book": book,
             "chapter": ch,
             "verse": vs,
         }
 
-    # 4) Universal fallback: book + numbers (STT‑friendly)
-    #    Example inputs:
-    #      "Genesis chapter 5 reading from verse 10"
-    #      "Let's read Genesis 5 from verse 10"
-    #      "We are in Genesis 5 verse 10 to 12"
-    #      "Genesis 5 10"
+    # 4) Universal fallback: book + numbers
     m = re.search(rf"\b({BOOK_PATTERN})\b", t, re.IGNORECASE)
     if not m:
         return None
 
-    book = normalize_book(m.group(1))
-    tail = t[m.end():]  # everything after the book name
+    book = normalize_book_name(m.group(1))
+    tail = t[m.end():]
 
-    # Extract all numbers after the book, in order
     nums = re.findall(r"\d+", tail)
     if len(nums) < 2:
-        # Not enough numeric signal to form chapter + verse
         return None
 
     chapter = int(nums[0])
     verse_start = int(nums[1])
-    verse_end = None
-
-    if len(nums) >= 3:
-        verse_end = int(nums[2])
+    verse_end = int(nums[2]) if len(nums) >= 3 else None
 
     if verse_end and verse_end > verse_start:
         return {
-            "type": "range",
+            "type":"range",
             "book": book,
             "chapter": chapter,
             "start": verse_start,
@@ -778,180 +285,99 @@ def parse_reference(text: str):
         }
 
     return {
-        "type": "single",
+        "type":"single",
         "book": book,
         "chapter": chapter,
         "verse": verse_start,
     }
 
-
-def build_range_verse_ids(book: str, chapter: int, v_start: int, v_end: int) -> List[str]:
-    MAX_RANGE = 15
-    if v_end - v_start + 1 > MAX_RANGE:
-        v_end = v_start + MAX_RANGE - 1
-
-    return [
-        verse_id_from_reference(book, chapter, v)
-        for v in range(v_start, v_end + 1)
-    ]
-
-# ============================================================
-# Implicit chapter detection
-# ============================================================
-def apply_implicit_chapter_rule(user_text: str) -> Optional[Tuple[str, int, int]]:
-    cleaned = normalize_text(user_text)
-    cleaned = re.sub(r"[.,;!?]", " ", cleaned)
-    cleaned = re.sub(r"\s+", " ", cleaned).strip()
-
-    if re.search(r"\bverse\s+\d+\s*(?:to|-)\s*\d+\b", cleaned):
-        return None
-
-    tokens = cleaned.split()
-    if len(tokens) < 4:
-        return None
-
-    book_raw = tokens[0]
-    book_norm = normalize_book_name(book_raw)
-    book_l = book_raw.lower().strip()
-
-    if not tokens[1].isdigit():
-        return None
-    if tokens[2] != "verse":
-        return None
-    if not tokens[3].isdigit():
-        return None
-
-    if len(tokens) > 4 and tokens[4] in ("to", "-"):
-        return None
-
-    chapter_num = int(tokens[1])
-    verse_num = int(tokens[3])
-
-    if book_l in ONE_CHAPTER_BOOKS:
-        return (book_norm, 1, chapter_num)
-
-    return (book_norm, chapter_num, verse_num)
-
 # ============================================================
 # Phrase matching
 # ============================================================
-def build_phrase_lookup(phrase_entries: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-    lookup: Dict[str, List[Dict[str, Any]]] = {}
-    for e in phrase_entries:
-        p = e.get("phrase", "")
+
+def build_phrase_lookup(entries: List[Dict[str,Any]]) -> Dict[str,List[Dict[str,Any]]]:
+    lookup = {}
+    for e in entries:
+        p = e.get("phrase","")
         if not p:
             continue
         key = normalize_text(p)
-        lookup.setdefault(key, []).append(e)
+        lookup.setdefault(key,[]).append(e)
     return lookup
 
-def phrase_match(user_text: str, phrase_lookup: Dict[str, List[Dict[str, Any]]]) -> Optional[Dict[str, Any]]:
+def phrase_match(user_text: str, lookup: Dict[str,List[Dict[str,Any]]]):
     norm = normalize_text(user_text)
-
-    best: Optional[Dict[str, Any]] = None
+    best = None
     best_len = 0
     best_weight = 0
-
-    for phrase_norm, entries in phrase_lookup.items():
+    for phrase_norm, entries in lookup.items():
         if phrase_norm and phrase_norm in norm:
             for e in entries:
-                w = int(e.get("weight", 1))
+                w = int(e.get("weight",1))
                 L = len(phrase_norm)
                 if L > best_len or (L == best_len and w > best_weight):
                     best = e
                     best_len = L
                     best_weight = w
-
     if not best:
         return None
-
     return {
-        "mode": "phrase",
+        "mode":"phrase",
         "confidence": PHRASE_CONFIDENCE,
         "trigger_phrase": best.get("phrase"),
         "tier": best.get("tier"),
-        "weight": best.get("weight", 1),
+        "weight": best.get("weight",1),
         "verse_id": best.get("verse_id"),
     }
 
 # ============================================================
 # Text similarity matching
 # ============================================================
-def normalize(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
 
-def compute_similarity(query: str, verse: str, full_verse_mode: bool) -> float:
+def normalize(s: str) -> str:
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9\s]"," ",s)
+    s = re.sub(r"\s+"," ",s).strip()
+    return s
+
+def compute_similarity(query: str, verse: str, full: bool) -> float:
     q_tokens = set(query.split())
     v_tokens = set(verse.split())
-
-    if not q_tokens or not v_tokens:
-        token_score = 0
-    else:
-        token_score = len(q_tokens & v_tokens) / len(q_tokens | v_tokens)
-
+    token_score = len(q_tokens & v_tokens) / len(q_tokens | v_tokens) if q_tokens and v_tokens else 0
     char_score = fuzz.WRatio(query, verse) / 100.0
+    return 0.25*token_score + 0.75*char_score if full else 0.60*token_score + 0.40*char_score
 
-    if full_verse_mode:
-        return 0.25 * token_score + 0.75 * char_score
-    else:
-        return 0.60 * token_score + 0.40 * char_score
-
-def match_text_to_reference(user_text: str,
-                            verses_index: Dict[str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def match_text_to_reference(user_text: str, verses: Dict[str,Dict[str,Any]]):
     query = normalize(user_text)
     if not query:
         return None
-
-    word_count = len(query.split())
-    full_verse_mode = word_count >= 10
-
+    full = len(query.split()) >= 10
     FULL_THRESHOLD = 0.80
     PARTIAL_THRESHOLD = 0.65
-
     best_vid = None
     best_ref = None
     best_score = 0.0
-
-    for vid, v in verses_index.items():
-        text_kjv = v.get("text_kjv", "")
-        verse_norm = normalize(text_kjv)
-        score = compute_similarity(query, verse_norm, full_verse_mode)
+    for vid, v in verses.items():
+        verse_norm = normalize(v.get("text_kjv",""))
+        score = compute_similarity(query, verse_norm, full)
         if score > best_score:
             best_score = score
             best_vid = vid
             best_ref = v.get("reference")
-
     if not best_vid:
         return None
-
-    if full_verse_mode:
-        if best_score >= FULL_THRESHOLD:
-            return {
-                "verse_id": best_vid,
-                "reference": best_ref,
-                "score": best_score,
-                "type": "full",
-            }
-    else:
-        if best_score >= PARTIAL_THRESHOLD:
-            return {
-                "verse_id": best_vid,
-                "reference": best_ref,
-                "score": best_score,
-                "type": "partial",
-            }
-
+    if full and best_score >= FULL_THRESHOLD:
+        return {"verse_id":best_vid,"reference":best_ref,"score":best_score,"type":"full"}
+    if not full and best_score >= PARTIAL_THRESHOLD:
+        return {"verse_id":best_vid,"reference":best_ref,"score":best_score,"type":"partial"}
     return None
-
 # ============================================================
 # Keyword matching
 # ============================================================
+
 def keyword_match(tokens: List[str],
-                  verses_index: Dict[str, Dict[str, Any]],
-                  keyword_index: Dict[str, List[str]]) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
+                  verses: Dict[str, Dict[str, Any]],
+                  index: Dict[str, List[str]]):
 
     if not tokens:
         return None, []
@@ -959,8 +385,8 @@ def keyword_match(tokens: List[str],
     q_counts = Counter(tokens)
 
     candidate_ids = set()
-    for t in q_counts.keys():
-        for vid in keyword_index.get(t, []):
+    for t in q_counts:
+        for vid in index.get(t, []):
             candidate_ids.add(vid)
 
     if not candidate_ids:
@@ -968,7 +394,7 @@ def keyword_match(tokens: List[str],
 
     scored: List[Dict[str, Any]] = []
     for vid in candidate_ids:
-        v = verses_index.get(vid)
+        v = verses.get(vid)
         if not v:
             continue
 
@@ -997,13 +423,99 @@ def keyword_match(tokens: List[str],
     return best, suggestions
 
 # ============================================================
+# Tokenization
+# ============================================================
+
+STOPWORDS = {
+    "the","and","of","to","in","that","a","an","for","is","it",
+    "as","be","with","by","this","from","or","at","was","were",
+    "are","but","not","into","unto","thou","thee","thy","ye",
+    "you","your","yours",
+}
+
+TOKEN_RE = re.compile(r"[a-z0-9']+")
+
+def tokenize(s: str) -> List[str]:
+    s = normalize_text(s)
+    tokens = TOKEN_RE.findall(s)
+
+    expanded: List[str] = []
+    for t in tokens:
+        expanded.append(t)
+        if t == "axe":
+            expanded.append("ax")
+        elif t == "ax":
+            expanded.append("axe")
+
+    return [t for t in expanded if t not in STOPWORDS and len(t) > 1]
+
+def is_quote_like(quote: str, tokens: List[str]) -> bool:
+    if any(t in KJV_FINGERPRINT_TOKENS for t in tokens):
+        return True
+    return len(tokens) >= MIN_TOKENS_FOR_KEYWORD_MODE
+
+# ============================================================
+# Loaders
+# ============================================================
+
+def load_json(path: str) -> Any:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def load_verses_index() -> Dict[str, Dict[str, Any]]:
+    try:
+        return load_json(VERSES_FILE)
+    except FileNotFoundError:
+        return load_json(FALLBACK_VERSES_FILE)
+
+# ============================================================
+# Implicit chapter rule
+# ============================================================
+
+def apply_implicit_chapter_rule(user_text: str) -> Optional[Tuple[str, int, int]]:
+    cleaned = normalize_text(user_text)
+    cleaned = re.sub(r"[.,;!?]", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+    if re.search(r"\bverse\s+\d+\s*(?:to|-)\s*\d+\b", cleaned):
+        return None
+
+    tokens = cleaned.split()
+    if len(tokens) < 4:
+        return None
+
+    book_raw = tokens[0]
+    book_norm = normalize_book_name(book_raw)
+    book_l = (book_norm or "").lower().strip()
+
+    if not tokens[1].isdigit():
+        return None
+    if tokens[2] != "verse":
+        return None
+    if not tokens[3].isdigit():
+        return None
+
+    if len(tokens) > 4 and tokens[4] in ("to", "-"):
+        return None
+
+    chapter_num = int(tokens[1])
+    verse_num = int(tokens[3])
+
+    if book_l in ONE_CHAPTER_BOOKS:
+        return (book_norm, 1, chapter_num)
+
+    return (book_norm, chapter_num, verse_num)
+
+# ============================================================
 # Main matcher
 # ============================================================
+
 def match_scripture(user_text: str,
                     verses_index: Dict[str, Dict[str, Any]],
                     keyword_index: Dict[str, List[str]],
                     phrase_lookup: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
 
+    # Remove Azure STT prefix like: [final] (azure) -
     cleaned_input = re.sub(
         r'^\s*\[\s*final\s*\]\s*\(\s*azure\s*\)\s*[:\-]?\s*',
         '',
@@ -1018,240 +530,160 @@ def match_scripture(user_text: str,
     debug_log("RAW:", repr(user_text))
     debug_log("CLEANED:", repr(cleaned_input))
 
-    
+    # 1) Try explicit reference parsing
     ref = parse_reference(cleaned_input)
-    debug_log("PARSE_REF:", ref)
+    debug_log("PARSED_REF:", ref)
 
     if ref:
-        if len(ref) == 4:
-            book, ch, v1, v2 = ref
-            ids = build_range_verse_ids(book, ch, v1, v2)
-            verses = []
-            for vid in ids:
-                v = verses_index.get(vid)
-                if v:
-                    verses.append({
-                        "verse_id": vid,
-                        "reference": v.get("reference"),
-                        "text_kjv": v.get("text_kjv"),
-                    })
-
-            if verses:
-                book_id = re.sub(r"[^A-Z0-9]+", "_", book.upper()).strip("_")
-                ref_label = f"{book} {ch}:{v1}-{v2}"
-                return {
-                    "mode": "reference_range",
-                    "quote_like": True,
-                    "confidence": 1.0,
-                    "best": {
-                        "verse_id": f"{book_id}_{ch}_{v1}-{v2}",
-                        "reference": ref_label,
-                        "text_kjv": "\n".join(
-                            f"{vv['reference'].split(':')[-1]} {vv['text_kjv']}"
-                            for vv in verses
-                        ),
-                        "verses": verses,
-                    },
-                    "suggestions": [],
-                }
-
-        if len(ref) == 3:
-            book, ch, vs = ref
-            vid = verse_id_from_reference(book, ch, vs)
-            debug_log("VID_FROM_REF:", vid, "exists:", vid in verses_index)
-            v = verses_index.get(vid)
-            if v:
+        if ref["type"] == "single":
+            book = ref["book"]
+            ch = ref["chapter"]
+            v = ref["verse"]
+            vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+            verse = verses_index.get(vid)
+            if verse:
                 return {
                     "mode": "reference",
-                    "quote_like": True,
-                    "confidence": 1.0,
                     "best": {
                         "verse_id": vid,
-                        "reference": v.get("reference"),
-                        "text_kjv": v.get("text_kjv"),
+                        "reference": verse.get("reference"),
+                        "text_kjv": verse.get("text_kjv"),
                     },
-                    "suggestions": [],
+                    "raw_input": user_text,
+                    "normalized_input": cleaned_input,
                 }
 
-    implicit = apply_implicit_chapter_rule(cleaned_input)
+        elif ref["type"] == "range":
+            book = ref["book"]
+            ch = ref["chapter"]
+            v_start = ref["start"]
+            v_end = ref["end"]
+            vids = []
+            for v in range(v_start, v_end + 1):
+                vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+                if vid in verses_index:
+                    vids.append(vid)
+            if vids:
+                return {
+                    "mode": "reference_range",
+                    "best": {
+                        "book": book,
+                        "chapter": ch,
+                        "start": v_start,
+                        "end": v_end,
+                        "verse_ids": vids,
+                    },
+                    "raw_input": user_text,
+                    "normalized_input": cleaned_input,
+                }
+
+    # 2) Implicit chapter rule
+    implicit = apply_implicit_chapter_rule(reference_input)
     debug_log("IMPLICIT:", implicit)
-
     if implicit:
-        book, ch, vs = implicit
-        vid = verse_id_from_reference(book, ch, vs)
-        debug_log("VID_FROM_IMPLICIT:", vid, "exists:", vid in verses_index)
-        v = verses_index.get(vid)
-        if v:
-            return {
-                "mode": "reference",
-                "quote_like": True,
-                "confidence": 1.0,
-                "best": {
-                    "verse_id": vid,
-                    "reference": v.get("reference"),
-                    "text_kjv": v.get("text_kjv"),
-                },
-                "suggestions": [],
-            }
+        book, ch, v = implicit
+        if book:
+            vid = f"{re.sub(r'[^A-Z0-9]+','_', book.upper()).strip('_')}_{ch}_{v}"
+            verse = verses_index.get(vid)
+            if verse:
+                return {
+                    "mode": "reference",
+                    "best": {
+                        "verse_id": vid,
+                        "reference": verse.get("reference"),
+                        "text_kjv": verse.get("text_kjv"),
+                    },
+                    "raw_input": user_text,
+                    "normalized_input": cleaned_input,
+                }
 
-    pm = phrase_match(cleaned_input, phrase_lookup)
-    if pm:
-        vid = pm["verse_id"]
-        v = verses_index.get(vid)
-        if v:
+    # 3) Phrase match
+    phrase_result = phrase_match(cleaned_input, phrase_lookup)
+    debug_log("PHRASE_RESULT:", phrase_result)
+    if phrase_result:
+        vid = phrase_result["verse_id"]
+        verse = verses_index.get(vid)
+        if verse:
             return {
                 "mode": "phrase",
-                "quote_like": True,
-                "confidence": pm["confidence"],
+                "confidence": phrase_result["confidence"],
                 "best": {
                     "verse_id": vid,
-                    "reference": v.get("reference"),
-                    "text_kjv": v.get("text_kjv"),
-                    "trigger_phrase": pm.get("trigger_phrase"),
-                    "tier": pm.get("tier"),
-                    "weight": pm.get("weight"),
+                    "reference": verse.get("reference"),
+                    "text_kjv": verse.get("text_kjv"),
                 },
-                "suggestions": [],
+                "raw_input": user_text,
+                "normalized_input": cleaned_input,
             }
 
-    text_result = match_text_to_reference(cleaned_input, verses_index)
-    if text_result:
-        vid = text_result["verse_id"]
-        v = verses_index.get(vid)
-        if v:
+    # 4) Text similarity
+    sim = match_text_to_reference(cleaned_input, verses_index)
+    debug_log("SIMILARITY_RESULT:", sim)
+    if sim:
+        vid = sim["verse_id"]
+        verse = verses_index.get(vid)
+        if verse:
             return {
-                "mode": "text",
-                "quote_like": True,
-                "confidence": text_result["score"],
+                "mode": "similarity",
+                "confidence": sim["score"],
                 "best": {
                     "verse_id": vid,
-                    "reference": text_result["reference"],
-                    "text_kjv": v.get("text_kjv"),
+                    "reference": verse.get("reference"),
+                    "text_kjv": verse.get("text_kjv"),
                 },
-                "suggestions": [],
+                "raw_input": user_text,
+                "normalized_input": cleaned_input,
             }
 
+    # 5) Keyword mode
     tokens = tokenize(cleaned_input)
     quote_like = is_quote_like(cleaned_input, tokens)
-
-    best, suggestions = keyword_match(tokens, verses_index, keyword_index)
+    debug_log("TOKENS:", tokens, "QUOTE_LIKE:", quote_like)
 
     if not quote_like:
         return {
-            "mode": "keyword",
+            "mode": "none",
             "quote_like": False,
-            "confidence": 0.0,
             "best": None,
             "suggestions": [],
-            "note": "blocked by quote-likeness gate",
+            "raw_input": user_text,
+            "normalized_input": cleaned_input,
         }
 
-    if best and best["confidence"] >= KEYWORD_MIN_CONFIDENCE_TO_DISPLAY:
-        return {
-            "mode": "keyword",
-            "quote_like": True,
-            "confidence": best["confidence"],
-            "best": best,
-            "suggestions": []
-        }
+    best_kw, suggestions_kw = keyword_match(tokens, verses_index, keyword_index)
+    debug_log("KEYWORD_BEST:", best_kw)
+    debug_log("KEYWORD_SUGGESTIONS:", suggestions_kw)
 
-    if best and best["confidence"] >= KEYWORD_MIN_CONFIDENCE_TO_SUGGEST:
+    if not best_kw:
         return {
-            "mode": "keyword",
+            "mode": "none",
             "quote_like": True,
-            "confidence": best["confidence"],
             "best": None,
-            "suggestions": [best] + suggestions
+            "suggestions": [],
+            "raw_input": user_text,
+            "normalized_input": cleaned_input,
         }
+
+    if best_kw["confidence"] < KEYWORD_MIN_CONFIDENCE_TO_SUGGEST:
+        return {
+            "mode": "none",
+            "quote_like": True,
+            "best": None,
+            "suggestions": [],
+            "raw_input": user_text,
+            "normalized_input": cleaned_input,
+        }
+
+    mode = "keyword"
+    if best_kw["confidence"] >= KEYWORD_MIN_CONFIDENCE_TO_DISPLAY:
+        mode = "keyword_confident"
 
     return {
-        "mode": "keyword",
+        "mode": mode,
         "quote_like": True,
-        "confidence": 0.0,
-        "best": None,
-        "suggestions": []
+        "confidence": best_kw["confidence"],
+        "best": best_kw,
+        "suggestions": suggestions_kw,
+        "raw_input": user_text,
+        "normalized_input": cleaned_input,
     }
-
-# ============================================================
-# Quick tests + interactive REPL
-# ============================================================
-AUTO_TESTS = [
-    "John 3:16-18",
-    "John chapter 3 verse 16 to 18",
-    "Proverbs chapter 5 verse 21",
-    "John 317",
-    "Isaiah chapter 54, verse 17.",
-    "Isaiah chapter fifty four verse seventeen",
-    "Do you remember Jeremiah chapter one verse five?",
-]
-
-def main() -> None:
-    verses_index = load_verses_index()
-
-    print("Loaded verse count:", len(verses_index))
-    print("GENESIS_1_1 exists:", "GENESIS_1_1" in verses_index)
-    print("NUMBERS_5_7 exists:", "NUMBERS_5_7" in verses_index)
-    print("EXODUS_3_20 exists:", "EXODUS_3_20" in verses_index)
-    print("MATTHEW_11_20 exists:", "MATTHEW_11_20" in verses_index)
-    print("JEREMIAH_3_5 exists:", "JEREMIAH_3_5" in verses_index)
-    print("EXODUS_3_20 exists:", "EXODUS_3_20" in verses_index)
-
-    if "NUMBERS_5_7" in verses_index:
-        print("NUMBERS_5_7 entry reference:", verses_index["NUMBERS_5_7"].get("reference"))
-
-    keys = list(verses_index.keys())
-    print("Sample keys:", keys[:10])
-    first = verses_index[keys[0]]
-    print("Sample fields:", first.keys())
-
-    keyword_index = load_json(KEYWORD_INDEX_FILE)
-
-    try:
-        phrase_entries = load_json(PHRASE_DICT_FILE)
-        if not isinstance(phrase_entries, list):
-            phrase_entries = []
-    except FileNotFoundError:
-        phrase_entries = []
-
-    phrase_lookup = build_phrase_lookup(phrase_entries)
-
-    print("Type scripture reference or quote (type 'exit' to quit)\n")
-    print("Running auto tests...\n")
-
-    for t in AUTO_TESTS:
-        print("=== TEST ===")
-        print(t)
-        r = match_scripture(t, verses_index, keyword_index, phrase_lookup)
-        print(f"MODE: {r['mode'].upper()}  CONF: {r.get('confidence')}")
-        if r.get("best"):
-            b = r["best"]
-            print(b.get("reference"))
-            print(b.get("text_kjv"))
-        else:
-            print("BEST: None")
-        print()
-
-    print("Auto tests complete.\n")
-
-    while True:
-        user_input = input(">>> ").strip()
-        if user_input.lower() == "exit":
-            break
-
-        r = match_scripture(user_input, verses_index, keyword_index, phrase_lookup)
-
-        if not r.get("best") and not r.get("suggestions"):
-            print("No match found.\n")
-            continue
-
-        b = r.get("best")
-        if b:
-            print(f"\nMODE: {r['mode'].upper()}  CONF: {r.get('confidence')}")
-            print(b.get("reference"))
-            print(b.get("text_kjv"))
-            print()
-        else:
-            print("\nNo BEST; suggestions exist.\n")
-
-if __name__ == "__main__":
-    main()

@@ -627,7 +627,7 @@ def match_scripture(user_text: str,
     phrase_result = phrase_match(cleaned_input, phrase_lookup)
     debug_log("PHRASE_RESULT:", phrase_result)
 
-    if phrase_result:
+    if phrase_result and phrase_result["confidence"] >= 0.8:
         vid = phrase_result["verse_id"]
         verse = verses_index.get(vid)
 
@@ -649,7 +649,7 @@ def match_scripture(user_text: str,
     sim = match_text_to_reference(cleaned_input, verses_index)
     debug_log("SIMILARITY_RESULT:", sim)
 
-    if sim:
+    if sim and sim["score"] >= 0.8:
         vid = sim["verse_id"]
         verse = verses_index.get(vid)
 

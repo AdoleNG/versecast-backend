@@ -627,10 +627,9 @@ def match_scripture(user_text: str,
     phrase_result = phrase_match(cleaned_input, phrase_lookup)
     debug_log("PHRASE_RESULT:", phrase_result)
 
-    if phrase_result and phrase_result["confidence"] >= 0.8:
-        vid = phrase_result["verse_id"]
+    if phrase_result:
+        vvid = phrase_result["verse_id"]
         verse = verses_index.get(vid)
-
         if verse:
             return {
                 "mode": "phrase",

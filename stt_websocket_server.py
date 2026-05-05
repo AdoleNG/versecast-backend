@@ -64,13 +64,9 @@ def post_ingest(session_id: str, text: str, is_final: bool) -> bool:
     }
     try:
         r = requests.post(INGEST_URL, json=payload, timeout=HTTP_TIMEOUT)
-        print(
-            "[INGEST]",
-            "FINAL" if is_final else "PARTIAL",
-            r.status_code,
-            r.text,
-            flush=True,
-        )
+        if is_final:
+            print("[INGEST] FINAL", r.status_code, r.text, flush=True)
+            
         return r.ok
     except Exception as e:
         print("[INGEST ERROR]", repr(e), flush=True)

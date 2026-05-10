@@ -201,7 +201,7 @@ async def stt_stream(ws: WebSocket):
 
     speech_config.set_property(
     speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-    "600"   # balanced (faster than default)
+    "1000"   # balanced (faster than default)
 )
 
 

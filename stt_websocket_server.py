@@ -43,9 +43,16 @@ app.add_middleware(
 )
 
 
+from fastapi import Response
+
 @app.get("/")
-async def root():
+def health():
     return {"status": "ok"}
+
+@app.head("/")
+def health_head():
+    return Response(status_code=200)
+
 
 
 # =========================================================

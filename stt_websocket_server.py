@@ -7,6 +7,7 @@ from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Response
 
 import azure.cognitiveservices.speech as speechsdk
 import requests
@@ -43,7 +44,7 @@ app.add_middleware(
 )
 
 
-from fastapi import Response
+
 
 @app.get("/")
 def health():
@@ -227,7 +228,7 @@ async def stt_stream(ws: WebSocket):
     )
 
     speech_config.set_property(
-        speechsdk.PropertyId.SpeechServiceConnection_SegmentationSilenceTimeoutMs,
+        speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
         "2000"   # prevents Azure from splitting mid‑sentence
 )
 

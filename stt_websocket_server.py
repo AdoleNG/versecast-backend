@@ -220,8 +220,8 @@ async def stt_stream(ws: WebSocket):
     )
 
     speech_config.set_property(
-    speechsdk.PropertyId.SpeechServiceConnection_SegmentationSilenceTimeoutMs,
-    "2000"   # prevents Azure from splitting mid‑sentence
+        speechsdk.PropertyId.SpeechServiceConnection_SegmentationSilenceTimeoutMs,
+        "2000"   # prevents Azure from splitting mid‑sentence
 )
 
      # =====================================================

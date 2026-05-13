@@ -58,6 +58,28 @@ import sys
 
 import psutil, os
 
+# small STT correction map for common mis-transcriptions
+STT_CORRECTIONS = {
+    "standed": "standeth",
+    "shore": "sure",
+    "percentify": "persecute",   # example; tune to real errors
+    "sabrina": "saviour",        # example mapping from logs
+    # add more observed errors here
+}
+
+from rapidfuzz import fuzz, process
+
+def apply_stt_corrections(s: str) -> str:
+    toks = TOKEN_RE.findall(normalize_text(s))
+    corrected = []
+    for t in toks:
+        if t in STT_CORRECTIONS:
+            corrected.append(STT_CORRECTIONS[t])
+        else:
+            corrected.append(t)
+    return " ".join(corrected)
+
+
 def log_memory(tag):
     process = psutil.Process(os.getpid())
     print(f"[MEMORY][{tag}] {process.memory_info().rss / (1024*1024):.2f} MB", flush=True)
@@ -165,7 +187,7 @@ OBEDIENCE_MID = 700
 # MATCHING THRESHOLDS
 # =========================================================
 
-PHRASE_CONFIDENCE = 0.98
+PHRASE_CONFIDENCE = 0.90
 KEYWORD_MIN_CONFIDENCE_TO_DISPLAY = 0.60
 KEYWORD_MIN_CONFIDENCE_TO_SUGGEST = 0.35
 TOP_K_SUGGESTIONS = 3
@@ -512,12 +534,15 @@ def build_range(book: str, chapter: int, start: int, end: int):
 # MATCH ENGINE
 # =========================================================
 
-def phrase_match(text: str):
+def phrase_match(text: str, fuzzy_threshold: int = 85):
     verses = get_verses()
     phrase_lookup = get_phrase_lookup()
 
     norm = normalize_text(text)
+    # also try corrected tokens
+    corrected = apply_stt_corrections(text)
 
+    # 1) exact substring (existing fast path)
     for p, entries in phrase_lookup.items():
         if p in norm:
             vid = entries[0].get("verse_id")
@@ -528,33 +553,68 @@ def phrase_match(text: str):
                     "verse": verses[vid],
                 }
 
+    # 2) fuzzy phrase match (token_set_ratio)
+    # check top candidates by fuzzy score
+    best_score = 0
+    best_entry = None
+    for p, entries in phrase_lookup.items():
+        # use token_set_ratio for order-insensitive matching
+        score = fuzz.token_set_ratio(corrected, p)
+        if score > best_score:
+            best_score = score
+            best_entry = entries[0]
+
+    if best_entry and best_score >= fuzzy_threshold:
+        vid = best_entry.get("verse_id")
+        if vid and vid in verses:
+            return {
+                "mode": "phrase_fuzzy",
+                "confidence": round(best_score / 100.0, 3),
+                "verse": verses[vid],
+            }
+
     return None
 
 
-def keyword_match(text: str):
+def keyword_match(text: str, fuzzy_token_threshold: int = 85):
     verses = get_verses()
     keyword_index = get_keyword_index()
 
-    tokens = tokenize(text)
+    # apply STT corrections first
+    corrected_text = apply_stt_corrections(text)
+    tokens = tokenize(corrected_text)
     if not is_quote_like(tokens):
         return {"mode": "none"}
 
     counts = Counter(tokens)
     cands = set()
 
+    # exact token lookup
     for t in counts:
         for vid in keyword_index.get(t, []):
             cands.add(vid)
 
-    scored = []
+    # if no candidates, try fuzzy token matching against keyword_index keys
+    if not cands:
+        # build list of known tokens once
+        known_tokens = list(keyword_index.keys())
+        for t in counts:
+            match, score, _ = process.extractOne(t, known_tokens, scorer=fuzz.token_sort_ratio)
+            if score >= fuzzy_token_threshold:
+                for vid in keyword_index.get(match, []):
+                    cands.add(vid)
 
+    if not cands:
+        return {"mode": "none"}
+
+    scored = []
     for vid in cands:
         v = verses.get(vid)
         if not v:
             continue
 
         w = v.get("keyword_weights", {})
-        overlap = sum(min(counts[t], w.get(t, 0)) for t in counts)
+        overlap = sum(min(counts.get(t,0), w.get(t, 0)) for t in counts)
         conf = overlap / float(sum(counts.values()))
         scored.append((conf, v))
 

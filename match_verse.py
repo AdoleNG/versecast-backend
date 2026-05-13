@@ -27,9 +27,9 @@ PHRASE_DICT_FILE = "phrase_dictionary.json"
 # Matching thresholds
 # ============================================================
 
-PHRASE_CONFIDENCE = 0.98
-KEYWORD_MIN_CONFIDENCE_TO_DISPLAY = 0.85
-KEYWORD_MIN_CONFIDENCE_TO_SUGGEST = 0.85
+PHRASE_CONFIDENCE = 0.90
+KEYWORD_MIN_CONFIDENCE_TO_DISPLAY = 0.60
+KEYWORD_MIN_CONFIDENCE_TO_SUGGEST = 0.35
 TOP_K_SUGGESTIONS = 3
 MIN_TOKENS_FOR_KEYWORD_MODE = 4
 
@@ -347,29 +347,59 @@ def compute_similarity(query: str, verse: str, full: bool) -> float:
     char_score = fuzz.WRatio(query, verse) / 100.0
     return 0.25*token_score + 0.75*char_score if full else 0.60*token_score + 0.40*char_score
 
-def match_text_to_reference(user_text: str, verses: Dict[str,Dict[str,Any]]):
+def match_text_to_reference(user_text: str, verses: Dict[str, Dict[str, Any]]):
+    """
+    Find the best matching verse for user_text using the existing compute_similarity helper.
+
+    Returns:
+      - {"verse_id": <id>, "reference": <ref>, "score": <float>, "type": "full"|"partial"}
+      - or None if no candidate passes thresholds
+    """
     query = normalize(user_text)
     if not query:
         return None
-    full = len(query.split()) >= 10
+
+    tokens_count = len(query.split())
+    full = tokens_count >= 10
+
+    # Dynamic thresholds: keep original defaults but relax for short queries
     FULL_THRESHOLD = 0.80
     PARTIAL_THRESHOLD = 0.65
+    if not full and tokens_count < 8:
+        PARTIAL_THRESHOLD = 0.58
+
     best_vid = None
     best_ref = None
     best_score = 0.0
+
+    # Iterate through verses and compute similarity
     for vid, v in verses.items():
-        verse_norm = normalize(v.get("text_kjv",""))
+        verse_text = v.get("text_kjv", "") or ""
+        verse_norm = normalize(verse_text)
         score = compute_similarity(query, verse_norm, full)
+
         if score > best_score:
             best_score = score
             best_vid = vid
             best_ref = v.get("reference")
+
+    # No candidate found
     if not best_vid:
         return None
+
+    # Decide based on thresholds and whether this was a "full" query
     if full and best_score >= FULL_THRESHOLD:
-        return {"verse_id":best_vid,"reference":best_ref,"score":best_score,"type":"full"}
+        return {"verse_id": best_vid, "reference": best_ref, "score": best_score, "type": "full"}
+
     if not full and best_score >= PARTIAL_THRESHOLD:
-        return {"verse_id":best_vid,"reference":best_ref,"score":best_score,"type":"partial"}
+        return {"verse_id": best_vid, "reference": best_ref, "score": best_score, "type": "partial"}
+
+    # Optionally log top candidate for debugging
+    try:
+        debug_log("MATCH_TEXT: query_tokens=", tokens_count, "best_vid=", best_vid, "score=", best_score)
+    except Exception:
+        pass
+
     return None
 # ============================================================
 # Keyword matching
@@ -629,7 +659,7 @@ def match_scripture(user_text: str,
 
     if phrase_result:
         vvid = phrase_result["verse_id"]
-        verse = verses_index.get(vid)
+        verse = verses_index.get(vvid)
         if verse:
             return {
                 "mode": "phrase",

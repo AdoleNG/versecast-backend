@@ -266,6 +266,27 @@ async def stt_stream(ws: WebSocket):
     def on_session_stopped(evt):
         print("[AZURE SESSION STOPPED]", evt, flush=True)
 
+        # 1. Notify the Control Panel that STT has stopped
+        asyncio.create_task(
+            broadcast_to_church(church_id, {
+                "type": "stt_stopped",
+                "session_id": session_id
+            })
+        )
+
+        # 2. Stop the recognizer (Azure sometimes leaves it half-open)
+        try:
+            recognizer.stop_continuous_recognition_async()
+        except Exception as e:
+            print("[AZURE STOP ERROR]", e, flush=True)
+
+        # 3. Close the websocket to the browser
+        try:
+            asyncio.create_task(ws.close())
+        except Exception as e:
+            print("[WS CLOSE ERROR]", e, flush=True)
+
+
     def on_speech_start_detected(evt):
         print("[AZURE SPEECH START DETECTED]", evt, flush=True)
 
@@ -287,6 +308,8 @@ async def stt_stream(ws: WebSocket):
     await asyncio.sleep(0.2)  # stabilize pipeline
 
     print("[AZURE] recognizer start returned OK", flush=True)
+
+    
 
     # =====================================================
     # RECEIVE AUDIO / CONTROL MESSAGES
@@ -327,6 +350,16 @@ async def stt_stream(ws: WebSocket):
         pass
     except Exception as e:
         print("[WS ERROR] WebSocket loop error:", repr(e), flush=True)
+
+    except websockets.exceptions.ConnectionClosedError:
+        asyncio.create_task(
+            broadcast_to_church(church_id, {
+                "type": "stt_error",
+                "reason": "connection_closed",
+                "session_id": session_id
+            })
+        )
+
 
     # =====================================================
     # CLEANUP

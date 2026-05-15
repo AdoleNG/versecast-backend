@@ -107,7 +107,7 @@ def post_match(session_id: str, text: str) -> bool:
 async def stt_stream(ws: WebSocket):
     """
     Browser sends:
-        - binary PCM chunks (16000 Hz, 16-bit)
+        - binary PCM chunks (48000 Hz, 16-bit)
         - JSON control messages: {"type": "start", "token": "...", "session_id": "..."}
 
     Server:

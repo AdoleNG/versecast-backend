@@ -209,12 +209,12 @@ async def stt_stream(ws: WebSocket):
 
     speech_config.set_property(
     speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-    "1200"   # balanced (faster than default)
+    "2000"   # balanced (faster than default)
 )
 
 
     audio_format = speechsdk.audio.AudioStreamFormat(
-        samples_per_second=16000,
+        samples_per_second=48000,
         bits_per_sample=16,
         channels=1,
     )
@@ -229,7 +229,7 @@ async def stt_stream(ws: WebSocket):
 
     speech_config.set_property(
         speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-        "1200"   # prevents Azure from splitting mid‑sentence
+        "2000"   # prevents Azure from splitting mid‑sentence
 )
 
      # =====================================================

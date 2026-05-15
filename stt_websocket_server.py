@@ -107,7 +107,7 @@ def post_match(session_id: str, text: str) -> bool:
 async def stt_stream(ws: WebSocket):
     """
     Browser sends:
-        - binary PCM chunks (48000 Hz, 16-bit)
+        - binary PCM chunks (16000 Hz, 16-bit)
         - JSON control messages: {"type": "start", "token": "...", "session_id": "..."}
 
     Server:
@@ -209,12 +209,12 @@ async def stt_stream(ws: WebSocket):
 
     speech_config.set_property(
     speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-    "2000"   # balanced (faster than default)
+    "1000"   # balanced (faster than default)
 )
 
 
     audio_format = speechsdk.audio.AudioStreamFormat(
-        samples_per_second=48000,
+        samples_per_second=16000,
         bits_per_sample=16,
         channels=1,
     )
@@ -229,7 +229,7 @@ async def stt_stream(ws: WebSocket):
 
     speech_config.set_property(
         speechsdk.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs,
-        "2000"   # prevents Azure from splitting mid‑sentence
+        "1000"   # prevents Azure from splitting mid‑sentence
 )
 
      # =====================================================

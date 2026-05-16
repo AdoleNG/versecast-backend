@@ -286,10 +286,12 @@ BOOK_ALIASES = {
     "1 samuel": "1 Samuel",
     "first samuel": "1 Samuel",
     "1st samuel": "1 Samuel",
+    "1 Sam": "1 Samuel",
     "i samuel": "1 Samuel",
     "2 samuel": "2 Samuel",
     "second samuel": "2 Samuel",
     "2nd samuel": "2 Samuel",
+    "2 Sam": "2 Samuel"
     "ii samuel": "2 Samuel",
     "1 kings": "1 Kings",
     "first kings": "1 Kings",

@@ -96,8 +96,8 @@ BOOK_ALIASES = {
     "1 thessalonians":"1 Thessalonians","first thessalonians":"1 Thessalonians","1st thessalonians":"1 Thessalonians","i thessalonians":"1 Thessalonians",
     "2 thessalonians":"2 Thessalonians","second thessalonians":"2 Thessalonians","2nd thessalonians":"2 Thessalonians","ii thessalonians":"2 Thessalonians",
 
-    "1 timothy":"1 Timothy","first timothy":"1 Timothy","1st timothy":"1 Timothy","i timothy":"1 Timothy",
-    "2 timothy":"2 Timothy","second timothy":"2 Timothy","2nd timothy":"2 Timothy","ii timothy":"2 Timothy",
+    "1 timothy":"1 Timothy","first timothy":"1 Timothy","1st timothy":"1 Timothy","i timothy":"1 Timothy", "1 tim": "1 Timothy",
+    "2 timothy":"2 Timothy","second timothy":"2 Timothy","2nd timothy":"2 Timothy","ii timothy":"2 Timothy", "2 tim": "2 Timothy",
 
     "titus":"Titus","philemon":"Philemon","hebrews":"Hebrews","heb":"Hebrews",
     "james":"James","1 peter":"1 Peter","first peter":"1 Peter","1st peter":"1 Peter","i peter":"1 Peter",

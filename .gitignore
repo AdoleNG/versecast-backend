@@ -1,0 +1,8 @@
+# Ignore all files with backup in the name
+*backup*
+
+# Ignore environment variable files
+.env
+
+# Ignore Python cache folders
+__pycache__/

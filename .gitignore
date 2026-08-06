@@ -6,3 +6,6 @@
 
 # Ignore Python cache folders
 __pycache__/
+
+# Ignore notes files
+*notes*
